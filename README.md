@@ -3,6 +3,13 @@
 Binary-only apt repository for [ci-agent](https://github.com/m-hoseinzadeh/ci-agent)
 (source repository is private). Packages are built and signed automatically by CI.
 
+## Documentation
+
+Full documentation is mirrored to [`docs/`](./docs/) on every release
+(install guide, project conventions, webhooks, configuration reference,
+operations, security). It is also embedded in the binary itself — every
+running instance serves it at `/docs`.
+
 ## Use
 
 ```bash
