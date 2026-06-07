@@ -116,6 +116,21 @@ a:hover { text-decoration: underline; }
 }
 .content pre code { background: none; border: 0; padding: 0; font-size: .84rem; color: var(--text); }
 
+/* copy-to-clipboard button on code blocks */
+.copy-wrap { position: relative; }
+.copy-btn {
+  position: absolute; top: .45rem; right: .45rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; padding: 0;
+  background: var(--card); color: var(--muted);
+  border: 1px solid var(--border); border-radius: 6px;
+  cursor: pointer; opacity: .55; transition: opacity .12s, color .12s;
+}
+.copy-wrap:hover .copy-btn, .copy-btn:focus-visible { opacity: 1; }
+.copy-btn:hover { color: var(--text-bright); border-color: var(--border-strong); }
+.copy-btn.copied { color: var(--accent); opacity: 1; }
+.copy-btn svg { width: 14px; height: 14px; }
+
 /* rouge syntax highlighting (minimal, palette-matched) */
 .highlight .c, .highlight .c1, .highlight .cm { color: var(--faint); font-style: italic; }
 .highlight .k, .highlight .kd, .highlight .kn { color: var(--blue); }
@@ -222,6 +237,54 @@ a:hover { text-decoration: underline; }
     toc.appendChild(li);
   });
   document.getElementById('toc-block').style.display = 'block';
+})();
+
+// Copy buttons on every code block.
+(function () {
+  var ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  var ICON_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
+
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text);
+    }
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '-1000px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } finally { ta.remove(); }
+    return Promise.resolve();
+  }
+
+  document.querySelectorAll('.content pre').forEach(function (pre) {
+    var text = pre.textContent.replace(/\n$/, '');
+    if (!text.trim()) return;
+    // wrapper keeps the button anchored while the <pre> scrolls horizontally
+    var wrap = document.createElement('div');
+    wrap.className = 'copy-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.title = 'Copy to clipboard';
+    btn.setAttribute('aria-label', 'Copy to clipboard');
+    btn.innerHTML = ICON_COPY;
+    btn.addEventListener('click', function () {
+      copyText(text).then(function () {
+        btn.innerHTML = ICON_OK;
+        btn.classList.add('copied');
+        setTimeout(function () {
+          btn.innerHTML = ICON_COPY;
+          btn.classList.remove('copied');
+        }, 1200);
+      });
+    });
+    wrap.appendChild(btn);
+  });
 })();
 </script>
 
