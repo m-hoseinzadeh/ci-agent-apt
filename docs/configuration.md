@@ -22,7 +22,7 @@ github_token = ""
 
 | Key | Meaning |
 |---|---|
-| `listen` | bind address. Keep on loopback and front with nginx/SSH when exposed (see [Security](./security.md)) |
+| `listen` | bind address. The packaged config ships `0.0.0.0:8044` for first boot; the setup wizard rewrites it to `127.0.0.1:8044` once the admin domain is verified behind nginx. A non-loopback value locks the UI to the wizard (see [Security](./security.md)) |
 | `data_dir` | SQLite DB, workspaces, run snapshots + logs, uploads, backups |
 | `max_concurrent_runs` | global cap on simultaneously *executing* runs; runs for the same project are always serial |
 | `run_timeout_secs` | hard wall-clock limit per run (fetch→deploy); the process tree is killed on expiry. Per-project override available in the UI |

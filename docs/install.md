@@ -116,21 +116,40 @@ sudo systemctl enable --now ci-agent
 systemctl status ci-agent --no-pager
 ```
 
-## 3. First login
+## 3. First-run setup
 
-The agent listens on `127.0.0.1:8044` by default. From your workstation:
+The packaged config listens on `0.0.0.0:8044` so the setup wizard is
+reachable at `http://<server-ip>:8044` right after install (the built-in
+default without a config file stays `127.0.0.1:8044`). The wizard enforces,
+in order:
+
+1. **Set the admin password** — do this immediately; until you do, anyone
+   who can reach the port can claim the instance.
+2. **Bind a domain** for the admin panel — a LAN DNS name or `/etc/hosts`
+   entry (e.g. `ci.example.internal`) works on air-gapped networks.
+3. **Install the generated nginx site** — copy-paste commands; the agent
+   never touches nginx itself.
+4. **Open `http://<your-domain>/`** — when the first request arrives through
+   nginx (Host matches, peer is loopback, `X-Forwarded-For` present), the
+   agent rewrites `listen` to `127.0.0.1:8044` in its config and restarts.
+   From then on the panel is unreachable from outside the server except
+   through nginx; the rest of the UI stays locked until this completes.
+
+Prefer to never expose the port, even briefly? Set
+`listen = "127.0.0.1:8044"` *before* the first start and run the wizard
+through an SSH tunnel:
 
 ```bash
 ssh -L 8044:127.0.0.1:8044 you@your-server
 ```
 
-Open <http://127.0.0.1:8044> and **set the admin password immediately** —
-until you do, anyone who can reach the port can claim the instance.
+The nginx step still applies — verification happens via a local request
+through the proxy.
 
 The env-encryption key is generated at `/etc/ci-agent/secret.key` on first
 start; **back it up** together with the database (Maintenance page).
 
-To expose the UI publicly, put nginx + TLS in front — config in
+For TLS, extend the generated server block — config in
 [Security](./security.md).
 
 ## 4. Air-gapped server

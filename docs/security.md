@@ -16,10 +16,20 @@ Project env vars are encrypted at rest (XChaCha20-Poly1305, key file
 
 ## Network exposure
 
-The agent speaks **plain HTTP** by design (TLS belongs to your nginx):
+The agent speaks **plain HTTP** by design (TLS belongs to your nginx), and
+the first-run wizard enforces the safe end state: the admin panel must be
+bound to a domain and proven reachable through host nginx before the agent
+rewrites `listen` to `127.0.0.1` and restarts itself. Verification is
+spoof-resistant — a request only counts as "via nginx" when its `Host`
+matches the bound domain **and** the TCP peer is loopback **and**
+`X-Forwarded-For` is present, so a forged Host header on the public port
+cannot trigger a premature lockdown (or fake one to lock the admin out
+before nginx works). If `listen` is later edited back to a public address,
+the admin UI locks to the wizard again until the listener is back on
+loopback.
 
-- Best: keep `listen` on `127.0.0.1` and access the UI through an SSH
-  tunnel, or publish it via host nginx with TLS:
+- Steady state: `listen` on `127.0.0.1`, access through the wizard's nginx
+  site or an SSH tunnel. For TLS, extend the generated server block:
 
 ```nginx
 server {
@@ -36,9 +46,11 @@ server {
 }
 ```
 
-- Binding to `0.0.0.0` on an untrusted network sends your password, session
-  cookie and submitted secrets in cleartext — acceptable for a quick test
-  on a trusted LAN, not for the internet.
+- The packaged config binds `0.0.0.0:8044` for first boot only, so the
+  wizard is reachable before nginx exists. On an untrusted network that
+  window sends your password in cleartext — set
+  `listen = "127.0.0.1:8044"` before first start and run the wizard
+  through an SSH tunnel instead.
 - Set the admin password **immediately after first start**; the first-run
   setup page is open until then.
 
