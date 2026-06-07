@@ -54,11 +54,41 @@ docker compose version
 
 ### nginx
 
+Current stable nginx from the official nginx.org apt repository (the distro
+package lags behind), following
+[nginx.org/en/linux_packages.html](https://nginx.org/en/linux_packages.html#Ubuntu):
+
 ```bash
+# prerequisites
+sudo apt-get install -y curl gnupg2 ca-certificates lsb-release ubuntu-keyring
+
+# import the nginx signing key
+curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor \
+  | sudo tee /usr/share/keyrings/nginx-archive-keyring.gpg > /dev/null
+
+# verify the key — the output must contain the fingerprint
+# 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62
+gpg --dry-run --quiet --no-keyring --import --import-options import-show \
+  /usr/share/keyrings/nginx-archive-keyring.gpg
+
+# add the stable repository and pin it above the distro package
+echo "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] \
+https://nginx.org/packages/ubuntu $(lsb_release -cs) nginx" \
+  | sudo tee /etc/apt/sources.list.d/nginx.list
+printf "Package: *\nPin: origin nginx.org\nPin: release o=nginx\nPin-Priority: 900\n" \
+  | sudo tee /etc/apt/preferences.d/99nginx
+
+# install
+sudo apt-get update
 sudo apt-get install -y nginx
 sudo systemctl enable --now nginx
 nginx -v
 ```
+
+nginx.org packages load sites from `/etc/nginx/conf.d/*.conf` and have **no**
+`sites-available`/`sites-enabled`. All commands the agent generates (setup
+wizard, per-project nginx guide) write to `conf.d`, which Ubuntu's distro
+package also includes — both layouts work.
 
 ### Verify everything
 
@@ -173,8 +203,9 @@ cd .. && tar czf debs.tar.gz debs
 scp debs.tar.gz you@airgapped-server:
 ```
 
-(Requires the Docker apt repository configured on the connected machine —
-see section 1.)
+(Requires the Docker **and nginx.org** apt repositories configured on the
+connected machine — see section 1; the pin in `99nginx` makes the closure
+resolve to nginx.org's nginx.)
 
 ### ci-agent package (connected machine)
 
