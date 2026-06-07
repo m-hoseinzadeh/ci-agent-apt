@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% if page.title %}{{ page.title }} · {% endif %}ci-agent docs</title>
+<meta name="description" content="{{ page.description | default: site.description }}">
+{% seo title=false %}
+<style>
+/* ci-agent docs — matches the admin UI's dark ops console theme.
+   Self-contained: system fonts, no external assets. */
+* { box-sizing: border-box; }
+:root {
+  color-scheme: dark;
+  --bg: #0f172a;
+  --bg-deep: #0b1120;
+  --card: #151e31;
+  --inset: #0d1526;
+  --border: #243250;
+  --border-strong: #334766;
+  --text: #e6ecf5;
+  --text-bright: #f8fafc;
+  --muted: #8b98ae;
+  --faint: #5d6b83;
+  --accent: #3fb950;
+  --blue: #60a5fa;
+  --amber: #fbbf24;
+  --radius: 8px;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+html { scroll-padding-top: 5rem; }
+body {
+  margin: 0;
+  background: var(--bg-deep);
+  color: var(--text);
+  font: 16px/1.65 var(--font-sans);
+}
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* header */
+.site-header {
+  position: sticky; top: 0; z-index: 10;
+  background: rgba(11, 17, 32, .92);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--border);
+}
+.site-header .inner {
+  max-width: 1100px; margin: 0 auto; padding: .7rem 1.25rem;
+  display: flex; align-items: center; gap: .6rem;
+}
+.brand { color: var(--text-bright); font-weight: 700; font-size: 1.05rem; }
+.brand:hover { text-decoration: none; }
+.brand-tag {
+  font-family: var(--font-mono); font-size: .72rem; color: var(--accent);
+  border: 1px solid var(--border-strong); border-radius: 999px;
+  padding: .05rem .5rem; background: var(--inset);
+}
+.header-links { margin-left: auto; font-size: .85rem; display: flex; gap: 1rem; }
+.header-links a { color: var(--muted); }
+.header-links a:hover { color: var(--text-bright); text-decoration: none; }
+
+/* layout: content + right sidebar */
+.page {
+  max-width: 1100px; margin: 0 auto; padding: 2rem 1.25rem 4rem;
+  display: grid; grid-template-columns: minmax(0, 1fr) 230px; gap: 3rem;
+}
+.sidebar { order: 2; }
+.content { order: 1; min-width: 0; }
+
+.sidebar-sticky { position: sticky; top: 4.5rem; max-height: calc(100vh - 6rem); overflow-y: auto; }
+.sidebar h4 {
+  margin: 0 0 .5rem; font-size: .72rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--faint);
+}
+.sidebar nav { margin-bottom: 1.75rem; }
+.sidebar ul { list-style: none; margin: 0; padding: 0; font-size: .875rem; }
+.sidebar li { margin: 0; }
+.sidebar a {
+  display: block; padding: .28rem .6rem; color: var(--muted);
+  border-left: 2px solid var(--border); border-radius: 0 4px 4px 0;
+}
+.sidebar a:hover { color: var(--text-bright); text-decoration: none; background: var(--card); }
+.sidebar a.active { color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
+#toc a.depth-3 { padding-left: 1.4rem; font-size: .82rem; }
+#toc-block { display: none; }
+
+/* content typography */
+.content h1 { font-size: 1.9rem; line-height: 1.25; color: var(--text-bright); margin: 0 0 1rem; }
+.content h2 {
+  font-size: 1.3rem; color: var(--text-bright);
+  margin: 2.2rem 0 .8rem; padding-bottom: .35rem;
+  border-bottom: 1px solid var(--border);
+}
+.content h3 { font-size: 1.05rem; color: var(--text-bright); margin: 1.6rem 0 .6rem; }
+.content p, .content li { color: var(--text); }
+.content strong { color: var(--text-bright); }
+.content hr { border: 0; border-top: 1px solid var(--border); margin: 2rem 0; }
+.content blockquote {
+  margin: 1rem 0; padding: .5rem 1rem; color: var(--muted);
+  border-left: 3px solid var(--border-strong); background: var(--card);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+/* code */
+.content code {
+  font-family: var(--font-mono); font-size: .85em;
+  background: var(--inset); border: 1px solid var(--border);
+  border-radius: 4px; padding: .1em .35em; color: var(--text-bright);
+}
+.content pre {
+  background: var(--inset); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: .9rem 1.1rem; overflow-x: auto;
+  line-height: 1.5;
+}
+.content pre code { background: none; border: 0; padding: 0; font-size: .84rem; color: var(--text); }
+
+/* rouge syntax highlighting (minimal, palette-matched) */
+.highlight .c, .highlight .c1, .highlight .cm { color: var(--faint); font-style: italic; }
+.highlight .k, .highlight .kd, .highlight .kn { color: var(--blue); }
+.highlight .s, .highlight .s1, .highlight .s2, .highlight .sb { color: var(--accent); }
+.highlight .nb, .highlight .nf, .highlight .nt { color: var(--amber); }
+.highlight .m, .highlight .mi { color: var(--amber); }
+.highlight .gp { color: var(--faint); }
+
+/* tables */
+.content table {
+  border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .9rem;
+  display: block; overflow-x: auto;
+}
+.content th, .content td { border: 1px solid var(--border); padding: .45rem .7rem; text-align: left; }
+.content th { background: var(--card); color: var(--text-bright); }
+.content tr:nth-child(even) td { background: var(--card); }
+
+/* footer */
+.site-footer {
+  border-top: 1px solid var(--border); margin-top: 3rem; padding-top: 1rem;
+  font-size: .82rem; color: var(--faint);
+}
+
+/* mobile: sidebar becomes a horizontal nav above the content, TOC hidden */
+@media (max-width: 900px) {
+  .page { grid-template-columns: 1fr; gap: 1.5rem; }
+  .sidebar { order: 0; }
+  .sidebar-sticky { position: static; max-height: none; }
+  .sidebar nav ul { display: flex; flex-wrap: wrap; gap: .3rem; }
+  .sidebar nav a { border: 1px solid var(--border); border-radius: 999px; padding: .2rem .7rem; }
+  .sidebar nav a.active { border-color: var(--accent); }
+  #toc-block { display: none !important; }
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="{{ '/docs/' | relative_url }}">ci-agent</a>
+    <span class="brand-tag">docs</span>
+    <div class="header-links">
+      <a href="{{ '/' | relative_url }}">apt repository</a>
+      <a href="https://github.com/m-hoseinzadeh/ci-agent-apt">GitHub</a>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+  <aside class="sidebar">
+    <div class="sidebar-sticky">
+      <nav aria-label="Documentation">
+        <h4>Documentation</h4>
+        <ul>
+          <li><a href="{{ '/docs/index.html' | relative_url }}">Overview</a></li>
+          <li><a href="{{ '/docs/install.html' | relative_url }}">Installation</a></li>
+          <li><a href="{{ '/docs/projects.html' | relative_url }}">Project conventions</a></li>
+          <li><a href="{{ '/docs/webhooks.html' | relative_url }}">Webhooks</a></li>
+          <li><a href="{{ '/docs/configuration.html' | relative_url }}">Configuration</a></li>
+          <li><a href="{{ '/docs/operations.html' | relative_url }}">Operations</a></li>
+          <li><a href="{{ '/docs/ui.html' | relative_url }}">Admin UI</a></li>
+          <li><a href="{{ '/docs/security.html' | relative_url }}">Security</a></li>
+          <li><a href="{{ '/index.html' | relative_url }}">apt repository</a></li>
+        </ul>
+      </nav>
+      <div id="toc-block">
+        <h4>On this page</h4>
+        <ul id="toc"></ul>
+      </div>
+    </div>
+  </aside>
+
+  <main class="content">
+    {{ content }}
+    <footer class="site-footer">
+      Mirrored from the source repository on every release · also served at
+      <code>/docs</code> by every running ci-agent instance.
+    </footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  // Highlight the active page in the docs nav.
+  var norm = function (p) {
+    return p.replace(/index\.html$/, '').replace(/\/$/, '') || '/';
+  };
+  var here = norm(location.pathname);
+  document.querySelectorAll('.sidebar nav a').forEach(function (a) {
+    if (norm(a.pathname) === here) a.classList.add('active');
+  });
+
+  // Build the "On this page" menu from h2/h3 headings (kramdown auto-ids).
+  var toc = document.getElementById('toc');
+  var headings = document.querySelectorAll('.content h2[id], .content h3[id]');
+  if (headings.length < 2) return;
+  headings.forEach(function (h) {
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    a.className = 'depth-' + h.tagName.charAt(1);
+    var li = document.createElement('li');
+    li.appendChild(a);
+    toc.appendChild(li);
+  });
+  document.getElementById('toc-block').style.display = 'block';
+})();
+</script>
+
+</body>
+</html>

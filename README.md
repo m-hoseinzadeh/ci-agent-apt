@@ -5,10 +5,13 @@ Binary-only apt repository for [ci-agent](https://github.com/m-hoseinzadeh/ci-ag
 
 ## Documentation
 
-Full documentation is mirrored to [`docs/`](./docs/) on every release
-(install guide, project conventions, webhooks, configuration reference,
-operations, security). It is also embedded in the binary itself — every
-running instance serves it at `/docs`.
+**Read the docs at <https://m-hoseinzadeh.github.io/ci-agent-apt/docs/>** —
+install guide, project conventions, webhooks, configuration reference,
+operations, security.
+
+The docs are mirrored to [`docs/`](./docs/) on every release and rendered by
+GitHub Pages. They are also embedded in the binary itself — every running
+instance serves them at `/docs`.
 
 ## Use
 

@@ -1,0 +1,12 @@
+title: ci-agent
+description: Single-binary CI/CD agent for offline / air-gapped Ubuntu servers
+url: "https://m-hoseinzadeh.github.io"
+baseurl: "/ci-agent-apt"
+markdown: kramdown
+
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+# Everything that isn't markdown (pool/, Packages, Release, *.gpg) is copied
+# through verbatim, so the apt repository keeps working unchanged.
