@@ -1,0 +1,40 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Architectures: amd64
+Date: Sun, 07 Jun 2026 14:42:48 +0000
+Label: ci-agent
+Origin: ci-agent
+Suite: stable
+MD5Sum:
+ 71807f392efddf1118cf5bd778e9dbf4              765 Packages
+ ad37d2ef97d821923c8fde729e534998              519 Packages.gz
+ d24b2f63e1a9d6e40fb07492e76dba52              106 Release
+SHA1:
+ 52d271b69f0dd738ef18bf6ca461b46e16fa1da5              765 Packages
+ c5234f68702a088130b9fa657b3b269b086a5006              519 Packages.gz
+ eae267a704eb47473d2d527f6796ea25ab48d2a8              106 Release
+SHA256:
+ 4ed4c820273e7a8caab61ab9accbbc8689c0461077f00bbfda518560cacab77c              765 Packages
+ e0f10c57a80876c8838727aaa6b0b1d82dcff5b74761f484ed6bc084903b4569              519 Packages.gz
+ c7365b0feb332d53e17c1bb4430347a562e1e96d8e17ba7186065bc2593c03c5              106 Release
+SHA512:
+ 8fe3bb6e4ca676edf6728e3132c4a62db7700bd14778ee63024650bbe2cab4f82ac874c0b9cebcc717d7d290ec22b70a9108b98ccf2d3fc165b0512d620530dd              765 Packages
+ a7eb00e69f9bb805287d923da767f65f179c711ece10599d23205f66caf74ba3783939fed5e522e4b1adba52928b98dba6b84141cac63c3b315d6aebfa5e387a              519 Packages.gz
+ 105939b2f6d2c6bf22bbfe313af5382fb5d8e64e6f21b005ea2d2ff507568ae17beaee16a1675f801a015179d336ba964ab91a127873b22f44f38c49d31beeb0              106 Release
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCgAdFiEEqA9zCc8mEz2+iOLsnFSJquhr8VkFAmolg2gACgkQnFSJquhr
+8Vnyqw/8Dh6L+XXj2sK2+kZDIgkFUPbgtKZy0JzAJ9c42Ad71A/Ljt9ifqtjPWFV
+z4b3RiCHhogiuq5DDLclg72/GdJMWdKRWJeiFXhWD4uWjanFvdUK4z9DaJ7atk6V
+ITtCt91+HMZedyOy+MUapIK3PqKNXcgRPJXvPKL+gMAShZx+g+jXbiYD2S3DcRry
+/rKQg1sibZRs0ENKNqRvprVwA7YfCmq+aWTIBYmtqAT7hHPDyiq1p2GpgsTSUZn6
+4qML0R9hcnn51fLYDohcX5/OXw6Unmi0NiHZIQC63K47Vz/MaOiPVAdLhI13JAvY
+TQTxNTjodUUgukZX320ApVryV1M7leR3NakypIWr1I7h9JPEAZ6ixt+xlqX5Y/c4
+dpqHlqoW26u95L/TYGOI8PBBg5lbqVQcPU11SBE5KiCXaJjsqyJlaiV1QPQryKpI
+VYjXEZC/3uLnTZsHh8tg5wF2M4ryqYFKMw4U7KQmjogvGWZ9sPiJlcaRF7cvKRHc
+f5xQH16Kkam41gTWR39v6KjjAIHCrV6n7/DAp3I7ti4shhQ4X8+1ioRcKy9nLPrM
+14xCD0WU65u/XIKozzKvKd2Uxa68eWDhm/JpbURc9z0wool+hIuFC0sj03Bc9uR7
+5LIxFO05DNw98bCHTi3GGm9n1RN9roTVJyH7z1/Gb00SlgH+mEQ=
+=p9Qf
+-----END PGP SIGNATURE-----
