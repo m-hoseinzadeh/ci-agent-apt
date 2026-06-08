@@ -239,10 +239,17 @@ a:hover { text-decoration: underline; }
   document.getElementById('toc-block').style.display = 'block';
 })();
 
-// Copy buttons on every code block.
+// Copy buttons on code blocks. Shell blocks (bash/sh/…) get one button per
+// logical command (continuations stay together; comment/blank lines get none);
+// config/file blocks get a single whole-block button. Kept in sync with the
+// agent's static/copy.js.
 (function () {
   var ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
   var ICON_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
+
+  var COMMAND_LANGS = {
+    bash: 1, sh: 1, shell: 1, shellsession: 1, 'shell-session': 1, console: 1, zsh: 1,
+  };
 
   function copyText(text) {
     if (navigator.clipboard && window.isSecureContext) {
@@ -259,14 +266,54 @@ a:hover { text-decoration: underline; }
     return Promise.resolve();
   }
 
-  document.querySelectorAll('.content pre').forEach(function (pre) {
-    var text = pre.textContent.replace(/\n$/, '');
-    if (!text.trim()) return;
-    // wrapper keeps the button anchored while the <pre> scrolls horizontally
-    var wrap = document.createElement('div');
-    wrap.className = 'copy-wrap';
-    pre.parentNode.insertBefore(wrap, pre);
-    wrap.appendChild(pre);
+  function langOf(pre) {
+    var code = pre.querySelector('code');
+    var cls = (code && code.className) || '';
+    if (!/language-/.test(cls) && pre.closest) {
+      var wrap = pre.closest('[class*="language-"]');
+      cls = (wrap && wrap.className) || cls;
+    }
+    var m = cls.match(/language-([\w-]+)/);
+    return m ? m[1].toLowerCase() : '';
+  }
+
+  function continues(ln) {
+    var t = ln.replace(/\s+$/, '');
+    return /\\$/.test(t) || /(\|\||&&|\|)$/.test(t);
+  }
+
+  function splitCommands(text) {
+    var out = [], lines = text.split('\n'), pos = 0, cur = null, cont = false;
+    for (var i = 0; i < lines.length; i++) {
+      var ln = lines[i], lineStart = pos, lineEnd = pos + ln.length;
+      pos = lineEnd + 1;
+      if (!cont) {
+        var trimmed = ln.replace(/^\s+|\s+$/g, '');
+        if (trimmed === '' || trimmed.charAt(0) === '#') continue;
+        cur = { start: lineStart, end: lineEnd };
+      } else {
+        cur.end = lineEnd;
+      }
+      cont = continues(ln);
+      if (!cont) { out.push(cur); cur = null; }
+    }
+    if (cur) out.push(cur);
+    return out;
+  }
+
+  function locate(root, offset) {
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    var n, acc = 0, last = null;
+    while ((n = walker.nextNode())) {
+      var len = n.nodeValue.length;
+      if (offset <= acc + len) return { node: n, off: offset - acc };
+      acc += len; last = n;
+    }
+    if (last) return { node: last, off: last.nodeValue.length };
+    return null;
+  }
+
+  function makeBtn(text) {
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'copy-btn';
@@ -277,13 +324,60 @@ a:hover { text-decoration: underline; }
       copyText(text).then(function () {
         btn.innerHTML = ICON_OK;
         btn.classList.add('copied');
-        setTimeout(function () {
-          btn.innerHTML = ICON_COPY;
-          btn.classList.remove('copied');
-        }, 1200);
+        setTimeout(function () { btn.innerHTML = ICON_COPY; btn.classList.remove('copied'); }, 1200);
       });
     });
-    wrap.appendChild(btn);
+    return btn;
+  }
+
+  document.querySelectorAll('.content pre').forEach(function (pre) {
+    var root = pre.querySelector('code') || pre;
+    var text = root.textContent.replace(/\n$/, '');
+    if (!text.trim()) return;
+
+    // wrapper keeps buttons anchored while the <pre> scrolls horizontally
+    var wrap = document.createElement('div');
+    wrap.className = 'copy-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+
+    var lang = langOf(pre);
+    var ranges;
+    if (COMMAND_LANGS[lang] === 1) {
+      ranges = splitCommands(text);
+      if (!ranges.length) ranges = [{ start: 0, end: text.length, whole: true }];
+    } else {
+      ranges = [{ start: 0, end: text.length, whole: true }];
+    }
+
+    var items = ranges.map(function (r) {
+      var btn = makeBtn(text.slice(r.start, r.end));
+      if (r.whole) btn.classList.add('copy-btn-block');
+      wrap.appendChild(btn);
+      return { btn: btn, r: r };
+    });
+
+    function place() {
+      var wrapTop = wrap.getBoundingClientRect().top;
+      items.forEach(function (it) {
+        if (it.r.whole) return;
+        var s = locate(root, it.r.start);
+        if (!s) return;
+        var range = document.createRange();
+        range.setStart(s.node, s.off);
+        range.collapse(true);
+        var rect = range.getBoundingClientRect();
+        var h = rect.height || parseFloat(getComputedStyle(pre).lineHeight) || 18;
+        it.btn.style.top = Math.max(2, rect.top - wrapTop + (h - it.btn.offsetHeight) / 2) + 'px';
+      });
+    }
+
+    if (items.length > 1 || (items[0] && !items[0].r.whole)) {
+      place();
+      if (window.ResizeObserver) new ResizeObserver(place).observe(wrap);
+      else window.addEventListener('resize', place);
+      setTimeout(place, 0);
+    }
   });
 })();
 </script>
