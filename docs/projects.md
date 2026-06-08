@@ -63,13 +63,13 @@ wiped after every run, so bind mounts into the source tree will not survive.
 ## Git access
 
 - Public/internal repos over `https://` or `file://` work as-is.
-- **Private GitHub repos over HTTPS**: set `github_token` in the agent config
-  — all `https://github.com/...` clones authenticate with it automatically
-  (one PAT with `repo` read access covers all your private projects). The
-  token is only ever sent to `github.com` exactly (lookalike hosts and
-  userinfo tricks in webhook-supplied URLs are rejected), never appears in
-  command lines or run logs, and is masked like any project secret.
-- For SSH repos (GitHub or anywhere else), set a deploy key path on the
-  project; the agent clones with that identity (`IdentitiesOnly=yes`).
+- **Private GitHub repos over HTTPS**: register a personal access token for the
+  repository owner on the **GitHub tokens** page (one token per GitHub
+  username, with `repo` read access). When a project clones
+  `https://github.com/<owner>/...`, the token registered for `<owner>`
+  authenticates it automatically. Tokens are encrypted at rest, only ever sent
+  to `github.com` exactly (lookalike hosts and userinfo tricks in
+  webhook-supplied URLs are rejected), never appear in command lines or run
+  logs, and are masked like any project secret.
 - Clones never prompt (`GIT_TERMINAL_PROMPT=0`): a private repo without
   working credentials fails fast with a clear error instead of hanging.

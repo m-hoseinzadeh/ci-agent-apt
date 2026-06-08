@@ -9,9 +9,10 @@ Refreshes every few seconds.
 ## Projects `/projects`
 
 Create and edit projects. A project is: name, slug (immutable), git URL +
-branch, optional SSH deploy key path, compose file path, domain + HTTP port
-(for the nginx guide), env vars (encrypted at rest; shown masked), optional
-HMAC secret, optional per-project run timeout.
+branch, compose file path, domain + HTTP port (for the nginx guide), env vars
+(encrypted at rest; shown masked), optional per-project run timeout. Private
+GitHub clones authenticate with a token registered on the **GitHub tokens**
+page (see below).
 
 Per project you also get:
 
@@ -79,6 +80,15 @@ changes, token rotations, triggers, cancellations, prunes, settings changes.
   staged restore can be cancelled until the restart. Note: encrypted env
   vars also need the matching `secret.key`.
 - **Run housekeeping now** — triggers the nightly pass on demand.
+
+## GitHub tokens `/github`
+
+Register one GitHub personal access token per username (the repository owner).
+When a project clones `https://github.com/<username>/…`, the token registered
+for that username authenticates the clone. Tokens are encrypted at rest with
+`secret_key_file` and never shown again — re-submitting a username replaces its
+token. Delete a token to revoke access. Add the token once here instead of
+per project; it covers every private repo owned by that account.
 
 ## Settings `/settings`
 

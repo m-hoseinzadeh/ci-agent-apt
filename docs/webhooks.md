@@ -52,20 +52,7 @@ optional `zip_url_allowlist` restricts which hosts may be fetched.
 |---|---|
 | `202` | accepted; body `{"run_id": N}` |
 | `404` | unknown project **or** bad token (indistinguishable on purpose) |
-| `401` | signature required and missing/invalid |
 | `422` | body present but unusable (bad JSON, missing `zip_url`, no git URL anywhere) |
-
-## Signatures (optional hardening)
-
-Set an HMAC secret on the project, then either:
-
-- **GitHub style** — header `X-Hub-Signature-256: sha256=<hex>`, the HMAC of
-  the raw request body (GitHub sends this automatically when you configure
-  the same secret), or
-- **GitLab style** — header `X-Gitlab-Token: <secret>` (plain match).
-
-When a secret is configured, unsigned requests are rejected even with a
-valid URL token.
 
 ## Queue behavior
 

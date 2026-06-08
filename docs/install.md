@@ -24,8 +24,9 @@ Releases are built automatically from every commit on `main`:
 >   -o ci-agent-x86_64-linux-musl.tar.gz "$URL"
 > ```
 >
-> Once installed, the agent updates *itself* from the Maintenance page using
-> the `github_token` config key — no manual API calls needed.
+> Once installed, the agent updates *itself* from the Maintenance page — the
+> update check reads the latest version from the public apt repository, so no
+> token is needed.
 
 ## 1. Install requirements
 

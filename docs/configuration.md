@@ -17,7 +17,6 @@ pull_policy = "never"
 notify_hook = ""
 secret_key_file = "/etc/ci-agent/secret.key"
 zip_url_allowlist = []
-github_token = ""
 ```
 
 | Key | Meaning |
@@ -35,7 +34,10 @@ github_token = ""
 | `notify_hook` | executable invoked with one JSON argument per event; empty = disabled |
 | `secret_key_file` | 32-byte key for env-var encryption; auto-generated `0600` on first start |
 | `zip_url_allowlist` | URL prefixes allowed for ZIP-URL fetches; empty = allow all (air-gapped default) |
-| `github_token` | optional GitHub token used for: (1) cloning private `https://github.com/...` project repos, (2) the Maintenance page's update check, (3) ci-agent self-update downloads while this repo is private. Empty on air-gapped servers. Protect the config file (`chmod 640`, owner `ci-agent`) |
+
+GitHub personal access tokens for cloning private repos are **not** configured
+here — register one token per GitHub username on the **GitHub tokens** page in
+the UI (encrypted at rest with `secret_key_file`). See [Projects](./projects.md).
 
 ## Environment overrides
 

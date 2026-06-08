@@ -8,11 +8,10 @@ CSRF-protected and written to the audit log.
 
 Webhooks authenticate with a 256-bit random URL token (constant-time
 compare; unknown slug and bad token are both `404` so projects can't be
-enumerated). Optional per-project HMAC signatures harden this further —
-see [Webhooks](./webhooks.md).
+enumerated) — see [Webhooks](./webhooks.md).
 
-Project env vars are encrypted at rest (XChaCha20-Poly1305, key file
-`0600`) and masked in run logs and the UI.
+Project env vars and GitHub personal access tokens are encrypted at rest
+(XChaCha20-Poly1305, key file `0600`) and masked in run logs and the UI.
 
 ## Network exposure
 
