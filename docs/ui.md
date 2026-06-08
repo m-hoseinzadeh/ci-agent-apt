@@ -58,22 +58,16 @@ changes, token rotations, triggers, cancellations, prunes, settings changes.
 - **System & versions** — ci-agent version + uptime, OS/kernel, and the
   installed versions of Docker Engine, Docker Compose, nginx, git and curl.
 - **Check for updates** — an *explicit* button (the agent never phones home
-  on its own) that compares installed versions against the latest upstream
-  releases via api.github.com. On an air-gapped server it simply reports
+  on its own) that compares installed versions against the latest upstream.
+  ci-agent's own latest version comes from the **public apt repository** (no
+  token needed, even while the source repo is private); Docker/Compose/nginx
+  come from api.github.com. On an air-gapped server it simply reports
   "unreachable" — expected and harmless. Docker/Compose/nginx results are
   informational; install those through your distribution's packages.
-- **ci-agent self-update** — the flow adapts to how the agent was installed:
-  - **apt package** (detected via dpkg): the page simply shows the two
-    `apt-get` upgrade commands — package management stays with apt.
-  - otherwise, *Download latest release* fetches the static binary +
-    `SHA256SUMS` from this repo's releases (set `github_token` in the config
-    while the repo is private) and verifies the checksum; nothing is applied
-    yet. Then: if the agent owns its executable path, an **Apply update &
-    restart** button swaps the binary (keeping `ci-agent.previous` for
-    rollback) and restarts via systemd; with a root-owned binary
-    (`/usr/bin`), the page shows the two `sudo` commands to run instead.
-    A staged update can be discarded. Requires `Restart=always` in the
-    systemd unit (the shipped one has it).
+- **ci-agent update** — ci-agent is an apt package, so updates go through apt;
+  the page shows the two `apt-get` upgrade commands. On an offline server,
+  sync the package on a connected machine first (see the install docs), then
+  run the same commands.
 - **Storage** — size breakdown of the data dir (database, run snapshots,
   backups, workspaces, uploads) and free disk.
 - **Backups** — create a backup on demand (`VACUUM INTO`, safe while runs are
