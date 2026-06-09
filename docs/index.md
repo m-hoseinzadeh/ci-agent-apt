@@ -1,4 +1,4 @@
-# ci-agent
+# CI Agent
 
 A single-binary CI/CD agent for **offline / air-gapped Ubuntu servers** that
 build and deploy **Docker Compose** stacks behind a manually-managed host

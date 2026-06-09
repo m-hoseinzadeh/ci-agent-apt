@@ -56,16 +56,16 @@ changes, token rotations, triggers, cancellations, prunes, settings changes.
 
 ## Maintenance `/maintenance`
 
-- **System & versions** — ci-agent version + uptime, OS/kernel, and the
+- **System & versions** — CI Agent version + uptime, OS/kernel, and the
   installed versions of Docker Engine, Docker Compose, nginx, git and curl.
 - **Check for updates** — an *explicit* button (the agent never phones home
   on its own) that compares installed versions against the latest upstream.
-  ci-agent's own latest version comes from the **public apt repository** (no
+  CI Agent's own latest version comes from the **public apt repository** (no
   token needed, even while the source repo is private); Docker/Compose/nginx
   come from api.github.com. On an air-gapped server it simply reports
   "unreachable" — expected and harmless. Docker/Compose/nginx results are
   informational; install those through your distribution's packages.
-- **ci-agent update** — ci-agent is an apt package, so updates go through apt;
+- **CI Agent update** — CI Agent is an apt package, so updates go through apt;
   the page shows the two `apt-get` upgrade commands. On an offline server,
   sync the package on a connected machine first (see the install docs), then
   run the same commands.

@@ -97,7 +97,7 @@ package also includes — both layouts work.
 docker --version && docker compose version && nginx -v && git --version && curl --version | head -1
 ```
 
-## 2. Install ci-agent
+## 2. Install CI Agent
 
 ### Option A — apt (recommended for online servers)
 
@@ -208,7 +208,7 @@ scp debs.tar.gz you@airgapped-server:
 connected machine — see section 1; the pin in `99nginx` makes the closure
 resolve to nginx.org's nginx.)
 
-### ci-agent package (connected machine)
+### CI Agent package (connected machine)
 
 ```bash
 # easiest: the .deb (installs user + unit + config in one step)
@@ -244,7 +244,7 @@ sudo systemctl start ci-agent
 The default `pull_policy = "never"` means deployments never try to reach a
 registry — they use exactly the images you loaded.
 
-## 5. Upgrading ci-agent
+## 5. Upgrading CI Agent
 
 apt installs:
 
