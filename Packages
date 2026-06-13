@@ -1,23 +1,4 @@
 Package: ci-agent
-Version: 0.1.0-r37
-Architecture: amd64
-Maintainer: Mohammad Hoseinzadeh <hoseinzadeh.ashraf@gmail.com>
-Installed-Size: 7388
-Depends: adduser, curl, git
-Recommends: docker.io | docker-ce, nginx
-Filename: pool/ci-agent_0.1.0-r37_amd64.deb
-Size: 2653432
-MD5sum: 9aac2b6a6cdf6b97c9af133854123832
-SHA1: f9a51b7823b9f419c7acc1db35d6ac56c6f71e54
-SHA256: fbd4a8089199e071535b2f975ccfe06d54a327d7d719ac08514f2a11e90d1a71
-Section: admin
-Priority: optional
-Description: Single-binary CI/CD agent for offline Docker Compose deployments
- Single-binary CI/CD agent for offline Ubuntu servers: receives git/ZIP
- webhooks, builds and deploys Docker Compose stacks behind host nginx, with an
- admin UI for runs, history, redeploys, Docker cleanup and server stats.
-
-Package: ci-agent
 Version: 0.1.0-r38
 Architecture: amd64
 Maintainer: Mohammad Hoseinzadeh <hoseinzadeh.ashraf@gmail.com>
@@ -181,6 +162,25 @@ Size: 3449224
 MD5sum: 2c637c1ca0598cb6979d30b7a670c786
 SHA1: 78ea802bdf6fbf4ca716aea08ef0f61b0b95a46e
 SHA256: 10ec9cc9367ab0f86b3292ba6ba120c4a27573c311093cd8e1c482f94cb3d463
+Section: admin
+Priority: optional
+Description: Single-binary CI/CD agent for offline Docker Compose deployments
+ Single-binary CI/CD agent for offline Ubuntu servers: receives git/ZIP
+ webhooks, builds and deploys Docker Compose stacks behind host nginx, with an
+ admin UI for runs, history, redeploys, Docker cleanup and server stats.
+
+Package: ci-agent
+Version: 0.2.0-r47
+Architecture: amd64
+Maintainer: Mohammad Hoseinzadeh <hoseinzadeh.ashraf@gmail.com>
+Installed-Size: 10328
+Depends: adduser, curl, git
+Recommends: docker.io | docker-ce, nginx
+Filename: pool/ci-agent_0.2.0-r47_amd64.deb
+Size: 3448888
+MD5sum: 122e050a4d15589e7a498d8b077f6000
+SHA1: 92e2b700b497f990b69cd8c4beb2d1a88be1b251
+SHA256: c6edcadffc4cb0e7055a164c6421498ac10c27028519ffe1941725e049146af3
 Section: admin
 Priority: optional
 Description: Single-binary CI/CD agent for offline Docker Compose deployments
