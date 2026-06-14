@@ -86,8 +86,11 @@ changes, token rotations, triggers, cancellations, prunes, settings changes.
   informational; install those through your distribution's packages.
 - **CI Agent update** — two ways to update from this page:
   - *apt* — on a connected server, run the shown `apt-get` upgrade commands.
-  - *Signed upload (offline)* — upload a release `.deb` **and** its detached
-    `.asc` signature. The agent verifies the signature **offline** against the
+  - *Signed upload (offline)* — upload either the whole
+    `ci-agent-offline-*.tar.gz` release bundle (the agent takes the `.deb` and
+    its `.deb.asc` out of it; the bundle's own public key is ignored), **or**
+    the release `.deb` **and** its detached `.asc` signature directly. The agent
+    verifies the signature **offline** against the
     embedded release key (pinned to fingerprint
     `A80F7309CF26133DBE88E2EC9C5489AAE86BF159`; any other key is rejected) and
     refuses downgrades, then **stages** the new binary. Click **Apply &

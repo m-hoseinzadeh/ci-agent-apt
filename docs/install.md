@@ -263,7 +263,11 @@ sudo systemctl restart ci-agent
 Air-gapped: fetch the new `.deb` on the connected machine, `scp`, `sudo dpkg
 -i`. All state survives upgrades (`/etc/ci-agent/config.toml` is a conffile);
 the running release is shown on the Maintenance page, which also offers a
-built-in self-update flow for non-apt installs.
+built-in self-update flow for non-apt installs. There you can upload the whole
+`ci-agent-offline-*.tar.gz` release bundle (the agent pulls the `.deb` and its
+signature out of it), or the `.deb` and its detached `.asc` separately; either
+way the signature is verified offline against the embedded release key before
+the binary is staged.
 
 ## 6. Building from source (alternative)
 

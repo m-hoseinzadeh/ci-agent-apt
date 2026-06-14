@@ -80,7 +80,10 @@ issuance needs no `sudo`. See [Domains & TLS](./domains.md).
 The Maintenance page's signed-upload update verifies the uploaded `.deb`
 **offline** against the release public key embedded in the binary, pinned to a
 single fingerprint — a valid signature from any other key is rejected — and
-refuses downgrades. The privileged binary swap runs only from systemd's root
+refuses downgrades. Uploading the `ci-agent-offline-*.tar.gz` bundle is the same
+check: the `.deb` and its detached signature are unpacked from it and the
+bundle's own bundled public key is ignored, so trust always rests on the
+embedded key, never one that travels with the upload. The privileged binary swap runs only from systemd's root
 pre-start step, and a crash-looping new binary is rolled back automatically.
 See [the UI guide](./ui.md).
 
