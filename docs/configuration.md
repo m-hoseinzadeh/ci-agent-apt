@@ -39,6 +39,10 @@ GitHub personal access tokens for cloning private repos are **not** configured
 here — register one token per GitHub username on the **GitHub tokens** page in
 the UI (encrypted at rest with `secret_key_file`). See [Projects](./projects.md).
 
+Domains, certificates and the Let's Encrypt account (email + staging) are
+likewise managed in the UI, not in `config.toml` — see
+[Domains & TLS](./domains.md).
+
 ## Environment overrides
 
 `CI_AGENT_LISTEN`, `CI_AGENT_DATA_DIR`, `CI_AGENT_SECRET_KEY_FILE`,
@@ -47,6 +51,11 @@ the UI (encrypted at rest with `secret_key_file`). See [Projects](./projects.md)
 ## CLI
 
 ```
-ci-agent serve         [--config /etc/ci-agent/config.toml]   # default
-ci-agent set-password  [--config ...]                         # reset admin password
+ci-agent serve                [--config /etc/ci-agent/config.toml]   # default
+ci-agent set-password         [--config ...]                         # reset admin password
+ci-agent apply-staged-update                                         # internal; run as root by systemd
 ```
+
+`apply-staged-update` is invoked by the systemd unit's privileged pre-start
+step to swap in a binary staged by the Maintenance page's
+[self-update](./ui.md); you don't run it by hand.

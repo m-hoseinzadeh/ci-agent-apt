@@ -8,29 +8,48 @@ Refreshes every few seconds.
 
 ## Projects `/projects`
 
-Create and edit projects. A project is: name, slug (immutable), git URL +
-branch, compose file path, domain + HTTP port (for the nginx guide), env vars
-(encrypted at rest; shown masked), optional per-project run timeout. Private
-GitHub clones authenticate with a token registered on the **GitHub tokens**
-page (see below).
+Create and edit projects. A project is: name, slug (immutable), a
+[deploy mode](./projects.md) and its source (git URL + branch, a Dockerfile
+path, a prebuilt image, or pasted compose), HTTP port, env vars (encrypted at
+rest; shown masked), optional per-project working directory (monorepos) and run
+timeout. Private GitHub clones authenticate with a token registered on the
+**GitHub tokens** page (see below).
 
 Per project you also get:
 
-- **Webhook URLs** with a rotate-token action.
+- **Webhook URLs** with a rotate-token action (source modes only).
 - **Manual triggers** — run from the configured repo (with optional
-  URL/branch override), from a ZIP URL, or by uploading a ZIP file.
+  URL/branch override), from a ZIP URL, or by uploading a ZIP file; sourceless
+  (Image / Inline-compose) projects get a **Deploy** button instead.
 - **Run history** with per-run status, commit, duration and error summary.
 - **Redeploy** buttons on successful runs — enabled only while the run's
   images still exist on the host.
-- **nginx guide** — copy-paste commands to wire `domain → 127.0.0.1:<port>`
-  in the host nginx (one time per project).
+- **Domains** — add multiple hostnames, mark one canonical (others 301), and
+  opt each into HTTPS. See [Domains & TLS](./domains.md).
+- **nginx** page — live status, the generated server block with a drift badge,
+  and **one-click apply** (write → `nginx -t` → reload) or the equivalent
+  copy-paste commands.
+- **Container logs** `/projects/<slug>/logs` — live `docker compose logs`
+  for the deployed stack, with a service picker, word-wrap toggle, and a clear
+  button (see below).
 - Archive/unarchive (archived projects reject webhooks).
+- **Delete** — a hard delete that removes the project and **all** its Docker
+  resources (containers, images, networks), run history, workspace and nginx
+  config. Type the slug to confirm; blocked while a run is in flight.
 
 ## Run detail `/runs/<id>`
 
 Status timeline, source/commit/image metadata, and the **live log**: the
 full run log replays instantly, then streams in real time while the run is
 active. A `Cancel` button TERM→KILLs the run's process tree.
+
+## Container logs `/projects/<slug>/logs`
+
+Live output of the project's **currently deployed** containers (distinct from
+run logs, which capture a build/deploy). Pick a single service or stream all of
+them, toggle word-wrap for long lines, and clear the view to watch only new
+output. The stream auto-sticks to the tail unless you scroll up to read
+scrollback.
 
 ## Docker `/docker`
 
@@ -65,10 +84,17 @@ changes, token rotations, triggers, cancellations, prunes, settings changes.
   come from api.github.com. On an air-gapped server it simply reports
   "unreachable" — expected and harmless. Docker/Compose/nginx results are
   informational; install those through your distribution's packages.
-- **CI Agent update** — CI Agent is an apt package, so updates go through apt;
-  the page shows the two `apt-get` upgrade commands. On an offline server,
-  sync the package on a connected machine first (see the install docs), then
-  run the same commands.
+- **CI Agent update** — two ways to update from this page:
+  - *apt* — on a connected server, run the shown `apt-get` upgrade commands.
+  - *Signed upload (offline)* — upload a release `.deb` **and** its detached
+    `.asc` signature. The agent verifies the signature **offline** against the
+    embedded release key (pinned to fingerprint
+    `A80F7309CF26133DBE88E2EC9C5489AAE86BF159`; any other key is rejected) and
+    refuses downgrades, then **stages** the new binary. Click **Apply &
+    restart** to install it: the service restarts and a privileged pre-start
+    step swaps the binary in. If the new binary crash-loops it is automatically
+    rolled back to the previous one after three failed starts. A staged update
+    can be discarded until you apply it.
 - **Storage** — size breakdown of the data dir (database, run snapshots,
   backups, workspaces, uploads) and free disk.
 - **Backups** — create a backup on demand (`VACUUM INTO`, safe while runs are

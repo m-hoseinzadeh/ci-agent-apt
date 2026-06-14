@@ -7,15 +7,19 @@ nginx.
 ## What it does
 
 1. Receives a webhook with a **git URL** (or a **ZIP file URL**), fetches the
-   sources, and runs a deployment.
+   sources, and runs a deployment — or deploys a prebuilt image / pasted
+   compose with no source at all.
 2. Builds every `build:` service in the project's `docker-compose.yml`,
    tagging images per run so old versions stay redeployable.
 3. Optionally runs your tests (`ci-test` service) before deploying.
 4. Deploys with `docker compose up -d`, health-gates the result, and
    automatically rolls back to the last good version on failure.
-5. Serves this admin UI: running jobs, deployment history, live logs,
-   redeploy, Docker cleanup tools, server resource gauges, and manual runs
-   from a git URL or an uploaded ZIP.
+5. Manages each project's nginx server block and TLS — multiple domains with a
+   canonical 301, per-domain HTTPS, and certificates from an internal CA,
+   self-signed, uploaded, or Let's Encrypt.
+6. Serves this admin UI: running jobs, deployment history, live run and
+   container logs, redeploy, Docker cleanup tools, server resource gauges, and
+   manual runs from a git URL or an uploaded ZIP.
 
 ## Design at a glance
 
@@ -34,6 +38,7 @@ nginx.
 - **[Installation](./install.md)** — get it running in five minutes.
 - **[Project conventions](./projects.md)** — what a deployable repo must look like.
 - **[Webhooks](./webhooks.md)** — trigger deployments from anywhere.
+- **[Domains & TLS](./domains.md)** — multiple domains, nginx, certificates.
 - **[Configuration](./configuration.md)** — every config.toml key.
 - **[Operations](./operations.md)** — queueing, rollback, retention, backups.
 - **[Security](./security.md)** — auth model and exposure guidance.

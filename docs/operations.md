@@ -45,6 +45,13 @@ redeploys are re-queued.
 3. Optional auto-prune of dangling images + build cache (Settings toggle,
    off by default; never touches protected images).
 4. Low-disk check → `disk_low` notification.
+5. Certificate renewal — auto-renewable certs (internal CA, self-signed,
+   Let's Encrypt HTTP-01) within 30 days of expiry are re-issued and nginx is
+   re-applied. Uploaded certs and LE DNS-01 wildcards are manual. See
+   [Domains & TLS](./domains.md).
+
+It also sweeps stale scratch files (e.g. an abandoned staged update) after an
+hour.
 
 ## Notifications
 

@@ -65,8 +65,29 @@ server {
   network, set the allowlist.
 - One global login rate limit (not per-IP) — single-admin tool.
 
+## Managing nginx and TLS
+
+One-click nginx apply shells out via `sudo -n` to a **narrow NOPASSWD
+allowlist** (installed by the package at `/etc/sudoers.d/`) limited to exactly
+`tee` the project's conf file, `nginx -t`, and `systemctl reload nginx`. No
+interactive prompt; if the rule is absent the call fails fast and the manual
+copy-paste commands still work. TLS cert/key PEMs are written by the
+unprivileged agent into its own data dir (nginx's master reads them), so cert
+issuance needs no `sudo`. See [Domains & TLS](./domains.md).
+
+## Self-update integrity
+
+The Maintenance page's signed-upload update verifies the uploaded `.deb`
+**offline** against the release public key embedded in the binary, pinned to a
+single fingerprint — a valid signature from any other key is rejected — and
+refuses downgrades. The privileged binary swap runs only from systemd's root
+pre-start step, and a crash-looping new binary is rolled back automatically.
+See [the UI guide](./ui.md).
+
 ## systemd hardening
 
 The shipped unit applies `NoNewPrivileges`, `PrivateTmp`,
 `ProtectSystem=strict`, `ProtectHome=read-only`, with writes limited to
-`/var/lib/ci-agent` and `/etc/ci-agent`.
+`/var/lib/ci-agent` and `/etc/ci-agent` (plus `/etc/nginx`, so the sudo'd
+config write lands on a writable mount). The privileged `apply-staged-update`
+pre-start step is the only component that writes `/usr/bin`.

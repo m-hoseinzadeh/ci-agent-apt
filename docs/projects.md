@@ -1,8 +1,30 @@
 # Project conventions
 
-There is no pipeline DSL. A deployable project is a git repo (or ZIP) that
-contains a `docker-compose.yml`; the pipeline is always *fetch → build →
-(test) → deploy*.
+There is no pipeline DSL. The pipeline is always *fetch → build → (test) →
+deploy*, and a project's **deploy mode** decides where the compose file comes
+from.
+
+## Deploy modes
+
+Pick one when you create the project:
+
+| Mode | Source | What it deploys |
+|---|---|---|
+| **Compose** (default) | git repo or ZIP | the repo's `docker-compose.yml` (path configurable) |
+| **Dockerfile** | git repo or ZIP | a single service built from a `Dockerfile`; the agent synthesizes a one-service compose file around it, publishing `container_port` on the registered HTTP port |
+| **Image** | none | a prebuilt image you name directly (e.g. `mariadb:11`), with optional named volumes; no fetch, no build |
+| **Inline compose** | none | a `docker-compose.yml` you paste into the UI; no fetch, no build |
+
+**Compose** and **Dockerfile** are *source* modes: they fetch from git or a
+ZIP and rebuild every run, so webhooks and manual git/ZIP runs apply. **Image**
+and **Inline compose** are *sourceless*: there is nothing to clone or build, so
+they have no webhook endpoints — deploy them with the **Deploy** button on the
+project page (trigger `manual_deploy`). Use them for off-the-shelf images
+(databases, caches) or a hand-written stack you don't keep in git.
+
+The conventions below describe **Compose** mode in full; Dockerfile and Image
+modes follow the same env/port/volume rules through the compose file the agent
+synthesizes for them.
 
 ## The compose file
 
@@ -13,6 +35,14 @@ contains a `docker-compose.yml`; the pipeline is always *fetch → build →
 - Services without `build:` use whatever image they name; it must already
   exist locally (see `pull_policy`).
 - Service names should stick to letters, digits, `.`, `_`, `-`.
+
+### Monorepos
+
+Set a **working directory** on the project to build from a subdirectory of the
+repo. When set, the compose-file path, the `Dockerfile` path, the synthesized
+override, and the Docker build context all resolve under it; leave it blank to
+use the repo root. The path is validated (no `..` escapes outside the
+checkout).
 
 ## Web exposure
 
@@ -27,9 +57,12 @@ services:
       - "127.0.0.1:8101:80"
 ```
 
-Host nginx proxies `your-domain → 127.0.0.1:8101`. The project's **nginx
-guide** page in the UI generates the exact one-time commands (server block,
-`nginx -t`, reload) from the domain + port you registered.
+Host nginx proxies `your-domain → 127.0.0.1:8101`. The project's **nginx**
+page generates the server block from the domains + port you registered and can
+**apply it in one click** (write → `nginx -t` → reload) when the sudo allowlist
+is installed; otherwise it shows the equivalent copy-paste commands. A project
+can serve **several domains** (with one canonical and 301 redirects) and opt
+each one into HTTPS — see **[Domains & TLS](./domains.md)**.
 
 The agent warns (without blocking) when the compose file doesn't publish the
 registered port, or when another project claims the same port.
