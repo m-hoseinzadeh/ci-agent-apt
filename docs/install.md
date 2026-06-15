@@ -278,6 +278,29 @@ signature out of it), or the `.deb` and its detached `.asc` separately; either
 way the signature is verified offline against the embedded release key before
 the binary is staged.
 
+> **Self-update needs one line in the service unit.** Applying a staged
+> binary is done by a root pre-start step, `ExecStartPre=+-/usr/bin/ci-agent
+> apply-staged-update`, in `ci-agent.service`. Packages built before this
+> shipped don't have it, and the self-update only ever swaps the binary — it
+> never rewrites the unit file — so an already-deployed box keeps the old
+> unit even after updating. If "Apply & restart" leaves you on the old
+> version (check **System & versions** on the Maintenance page), add the step
+> once with a drop-in:
+>
+> ```bash
+> sudo mkdir -p /etc/systemd/system/ci-agent.service.d
+> printf '[Service]\nExecStartPre=+-/usr/bin/ci-agent apply-staged-update\n' \
+>   | sudo tee /etc/systemd/system/ci-agent.service.d/self-update.conf
+> sudo systemctl daemon-reload
+> # apply the binary already staged by the failed attempt, then restart:
+> sudo /usr/bin/ci-agent apply-staged-update
+> sudo systemctl restart ci-agent
+> ```
+>
+> Confirm with `systemctl cat ci-agent | grep ExecStartPre`. The drop-in lives
+> outside the packaged unit, so it survives both self-updates and later `dpkg`
+> upgrades. Fresh installs already include the step and need none of this.
+
 ## 6. Building from source (alternative)
 
 ```bash
