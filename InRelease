@@ -2,39 +2,39 @@
 Hash: SHA512
 
 Architectures: amd64
-Date: Mon, 15 Jun 2026 10:49:06 +0000
+Date: Mon, 15 Jun 2026 11:01:27 +0000
 Label: ci-agent
 Origin: ci-agent
 Suite: stable
 MD5Sum:
- 9db103b4f269817cb971dd80c98091e5             7680 Packages
- 6fcdd8b1ef61626f0e41684a2d51a806             1523 Packages.gz
- fb9a44ba497af07bcb78841dc783ec88              106 Release
+ 4cd3f8f3862a9ff814458909c137d1a0             7680 Packages
+ c3ec50b4bc850b947e6033bed57a869f             1521 Packages.gz
+ 1056eeec7e97e34c307dc5a4faedcc58              106 Release
 SHA1:
- 0de39b6bd2aefc108dfad9c3b3786076df838a3a             7680 Packages
- d63c59dcd162d2600ff0849bc909d2237e563172             1523 Packages.gz
- 1cfcc90511a6db79847368df1d82688976cff18a              106 Release
+ 1bca259c9229a5cb5857e4b0148b351b7120d087             7680 Packages
+ 277831d61299ede124e63f3fec76bdee7a39babe             1521 Packages.gz
+ 787808a431d1d38fb56e3457b77d950c19038b49              106 Release
 SHA256:
- 69a0030bd269b755f40f132f6f246d95e08891a66738b17077f347872f9032d4             7680 Packages
- 84244c2ba569e972121428e6045dd30b7d6f4c4d2bffa2fb69ccd6195d2c785e             1523 Packages.gz
- 642f9252577c95b7231561cd985a7c658ac6c9932c518dc5ddce61aabe0913d3              106 Release
+ ac0e0685f3ad3a9323ad6d5864619fdbe09039267305af0a66f808d597f99789             7680 Packages
+ 47fa2b8aae88fcbe9cc3269709f36469712dd66876f0e86054b2bce5dec4314f             1521 Packages.gz
+ 9f7d6eb41806c9c039056dd1b2ddb4766d0a5af519ab6baaf0da6dc893a59ed0              106 Release
 SHA512:
- 45e92cd09cdbe0d578458a3cbf29a678fc42a3fc7535712cd640a040e9d2a60180518331a8f8b725d89718ca7d774ac573c30f3edc15841253e6802a6e00c858             7680 Packages
- caf0e6833ad65bc359666b8abb0d3ace58452505623d7dd7a157349540a0f360f43f99c136ea6f591b745694b6f27159438093c18694c1f810ef702641ebbd91             1523 Packages.gz
- 72bc52822020452029870225d2d2a7e71882dfb3af0dd394c061c41200864158aa4aa0dd516db05b2177ac115c33f543fbcadff16ae3f39855535662053e7f7e              106 Release
+ 1b5909ae7b578119bf9808711679239bce18272bad65ad33f9f872e2361cc84e276e238353d1ae8a632b2f8d618e26983f0971628040d920cf8516594cfbc747             7680 Packages
+ 34e08d433efeb35d5d1339797e30551ca61bcea799ad84beee07bcfc40d0b8972988ce343e39b0bb301a9f3032bb2d6025eca27536d2293e077a7896a302fce7             1521 Packages.gz
+ ab1fab89d61fe4773f0b774ab31af54a00a4d78ccb14b893eee4fe802d47a5a07abe9fa28ab804b803802eb94b371cb4fbaf0c0feda02ba0e408470256e6b56d              106 Release
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAEBCgAdFiEEqA9zCc8mEz2+iOLsnFSJquhr8VkFAmov2KIACgkQnFSJquhr
-8Vl6mg/+Igeto26zkRkbKcL5WC0nGPPchKu3w/obLDm+j7wtzHrYlFVKiWLXKZjr
-cG4qkAdiLDRT1sx1/tv8rbyL8ATqVWsiqCTisc2kuBV2hewtvYUvz0eYrfzAGdyk
-jVrijmdavXX/ZlQp8k2KJ0qKwqTXwFYD2UUcor8GLe/SSyNxqUIjBqEZPQBmF96o
-zar1kznt9QZporAdtPDSwS+/6N5PEsvbsGNUYTpkBZC/BkM+xP+QHGPGbn/UIWvu
-WBQaR6tLerYfLvcbtdxTCp9zO+XmDJmih9OFb+x+vrQEu4qGeJ501NLXfv8MNfUJ
-PyP510fV857lZsbVZKGTR1NUnoM0T4Vjym4q/IPaSipkzvQdK651EMdG7W3QO0a3
-ysZpLyKQw7E0sKaJl1ofSkgHfbjp3ZVccMryDk5jQxTuYxC5MrqsXnd16L1r0J0p
-0CfBEcMjjRT7Uzu3joRmyin6uOiHNop1iuhoimkALzwqRgf4oKtPswlFUrqKJRW/
-L2+9CNVoR/kj72k9y0W5qUa0bWuJK8yrXERZQR1c9Guii446aNjkwDquUi1gp69Z
-E2NzptEiW/isunPhtUA/1RXFQBjIKcMvWNUtrknryi6zTVasCqq4nt4mNXW+A8+V
-xvT02Wj9gKdKEnaW+ogTu81IoO00+SOlrKY9shpAoZPRw7jnWgg=
-=Eguo
+iQIzBAEBCgAdFiEEqA9zCc8mEz2+iOLsnFSJquhr8VkFAmov24cACgkQnFSJquhr
+8VlciQ/+NWUiXlsGM1fIBoOyz1ScHcgqcQv8aof0lMTxNxunHmMXdf6+hzm6ArWL
+u7l3tj6ZGzUURKSv+10R9wC8yZO/JFloyMdVps49cO1SdR+dqH3NX+Qv3qlW0aZE
+LfB97LzDstbG0MgTjvhJRz16mFHTwoiqApM7zmTlJMr1yxaXJWnoA6fkF96ifqj8
+ZL4h5CEpwE4lC8bQRTafxf6M1koF1RsuLCKSVF54qPwinQk85uJOMQls8PEoy+a0
+I6N8m8a9/dXBSOz6K1u3EEfjM9why/YfP6Ze9+Q4v1BW7vBR4/cLXPPZwXQPDzGk
+ruAMimlICg9BjhjKrlGaL7dL3xX8xcoszkJmLBEY/GyrTXVhFjeQ0lvhXekQA5xU
+oyAHdKSc0vXEsf1rfrmSfR5h0GGVoOF6kPnTLuFA5ZVpXq2IqgqDvhpgIiQhSFYN
+9x8OFOBtdkPUh9z2yOB4fshfHFDFYC1lHwg0ZACNIdTPIBxKC5lssR8m8qQxyVPr
+bGZ3pRj03X1t7d2n3FgCIRU/usRcDzADqFekYVZGNqP0Nbh/b32k5wDXw7s3asvc
+g/sfi5+ZW3ntpkIHUDVbdQ5jerZf0hXzkWU9hNC7n9AbUWVXJvN4O5NrIFebQoLI
+EBZ+qpGJYhjq3Ai7qHo9QAMh6WVAbOyJgx+DaXof/EUDI2BPRhQ=
+=NrgI
 -----END PGP SIGNATURE-----
