@@ -26,6 +26,62 @@ The conventions below describe **Compose** mode in full; Dockerfile and Image
 modes follow the same env/port/volume rules through the compose file the agent
 synthesizes for them.
 
+## One-click app catalog
+
+Instead of writing a compose file by hand, **Projects → Browse app catalog**
+offers a searchable grid of ready-made app templates (Redis, Postgres, …).
+Pick one, fill a short form (project name, port, and any app variables such as
+a password — generated ones are pre-filled), and the agent creates an **Inline
+compose** project from the template with your values substituted.
+
+The catalog is populated from **catalog sources** — git repositories holding
+`apps/*.toml` templates — managed under **Browse app catalog → Manage sources**:
+
+- An official source is pre-configured; you can disable or delete it, and add
+  your own repositories. Apps from every enabled source are merged into one list.
+- **Sync** clones a source to this server and parses its templates. Sources are
+  cached locally, so the catalog keeps working offline after a sync.
+- ⚠ Only add sources you trust: deploying one of their apps runs its containers
+  on this host.
+
+Catalog apps reference public images (e.g. `redis:7-alpine`). On an
+internet-connected host `docker compose up` pulls any missing image
+automatically; on an air-gapped host, pre-load the images first (see
+`pull_policy` and Troubleshooting). Generated passwords live inside the
+project's compose file — copy them from the configure form before creating.
+
+A source template (`apps/redis.toml`) looks like:
+
+```toml
+slug = "redis"
+name = "Redis"
+category = "Database"
+description = "In-memory key-value store, cache and message broker."
+keywords = ["cache", "kv", "queue"]
+http_port = 6379
+compose = '''
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "{{REDIS_PASSWORD}}"]
+    ports: ["{{HTTP_PORT}}:6379"]
+    volumes: ["redis_data:/data"]
+volumes:
+  redis_data:
+'''
+
+# All top-level keys (including `compose`) must come BEFORE the variables
+# blocks — TOML absorbs anything after `[[variables]]` into that table.
+[[variables]]
+key = "REDIS_PASSWORD"
+label = "Redis password"
+generate = true            # form field pre-filled with a generated secret
+```
+
+`{{HTTP_PORT}}` is replaced by the chosen port; every other `{{TOKEN}}` must be
+declared in a `[[variables]]` block (validated on sync).
+
 ## The compose file
 
 - Default path `docker-compose.yml`, configurable per project.
