@@ -41,4 +41,5 @@ nginx.
 - **[Domains & TLS](./domains.md)** — multiple domains, nginx, certificates.
 - **[Configuration](./configuration.md)** — every config.toml key.
 - **[Operations](./operations.md)** — queueing, rollback, retention, backups.
-- **[Security](./security.md)** — auth model and exposure guidance.
+- **[Security](./security.md)** — auth model, two-factor login, exposure guidance.
+- **[Troubleshooting & FAQ](./troubleshooting.md)** — common problems and quick answers.

@@ -23,6 +23,11 @@ fails the run, and the agent automatically redeploys the **last successful
 run's snapshot** (clearly marked in the log). The brief stop-start window of
 the `recreate` strategy is an accepted trade-off on small servers.
 
+> **Note:** "rolling back" here means putting the previous working version
+> back, automatically, so a bad deploy doesn't leave your app down. A
+> "snapshot" is the exact compose file and image versions the agent saved for
+> each successful run.
+
 ## Redeploying old versions
 
 Every successful run snapshots its exact compose file + the generated

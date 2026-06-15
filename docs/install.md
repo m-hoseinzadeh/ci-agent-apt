@@ -165,6 +165,15 @@ in order:
    agent rewrites `listen` to `127.0.0.1:8044` in its config and restarts.
    From then on the panel is unreachable from outside the server except
    through nginx; the rest of the UI stays locked until this completes.
+5. **Set up two-factor authentication (2FA)** — on your first login the panel
+   shows a QR code. Scan it with an authenticator app (e.g. Google
+   Authenticator) and enter the 6-digit code to finish. **Save the 10 backup
+   codes** it shows — each one logs you in once if you lose your phone. 2FA is
+   required; the panel stays locked until you enroll.
+
+> **Note:** the QR code is drawn by the agent itself, so 2FA setup works fully
+> offline. Lost your phone with no backup codes left? Run `ci-agent reset-2fa`
+> on the server and log in to enroll again. See [Security](./security.md).
 
 Prefer to never expose the port, even briefly? Set
 `listen = "127.0.0.1:8044"` *before* the first start and run the wizard

@@ -2,9 +2,42 @@
 
 ## Model
 
-Single admin user; argon2id-hashed password; HttpOnly `SameSite=Lax`
-session cookie; login rate-limited (5/min); every mutating action is
-CSRF-protected and written to the audit log.
+There is **one admin user**. Login is in two steps:
+
+1. **Password** — stored only as an argon2id hash (never in plain text).
+2. **Two-factor code (2FA)** — a 6-digit code from an authenticator app
+   (Google Authenticator, and any app that follows the same standard).
+
+After a successful login you get an HttpOnly `SameSite=Lax` session cookie.
+Logins are rate-limited (5 tries per minute). Every action that changes
+something is CSRF-protected and written to the audit log.
+
+> **What is 2FA?** "Two-factor" means you need two things to log in:
+> something you *know* (the password) and something you *have* (your phone
+> with the authenticator app). If someone steals the password, they still
+> can't get in.
+
+### Two-factor authentication (TOTP)
+
+- **Mandatory.** After you first set the password and log in, the panel
+  sends you to an enrollment page and stays locked until you finish.
+- **Offline-friendly.** The setup page shows a QR code drawn by the agent
+  itself (no internet needed). Scan it with your authenticator app, or type
+  the shown secret in by hand.
+- **Standard settings** (cannot be changed): SHA1, 6 digits, a new code
+  every 30 seconds. The agent accepts the code from the step before and
+  after the current one, so a small clock difference between phone and
+  server is fine.
+- **Backup codes.** When you enable 2FA the agent shows **10 one-time backup
+  codes**. Save them somewhere safe — each one logs you in once if you lose
+  your phone.
+- **The secret and backup codes are encrypted at rest** with the same key
+  that protects project secrets (`secret_key_file`), never stored in plain
+  text.
+- **Lost your phone?** Use a backup code on the code-entry page, or run
+  `ci-agent reset-2fa` on the server to clear 2FA — the next login starts a
+  fresh enrollment. See the [Admin UI guide](./ui.md) for day-to-day 2FA
+  management (regenerate backup codes, change the secret).
 
 Webhooks authenticate with a 256-bit random URL token (constant-time
 compare; unknown slug and bad token are both `404` so projects can't be

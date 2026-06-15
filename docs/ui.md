@@ -1,5 +1,23 @@
 # Admin UI guide
 
+## Logging in & two-factor authentication
+
+Login has two steps:
+
+1. Enter the admin **password**.
+2. Enter the 6-digit **code** from your authenticator app (or a one-time
+   backup code).
+
+The first time you log in, the panel makes you set up two-factor
+authentication (2FA) before anything else. It shows a **QR code** — scan it
+with an authenticator app such as Google Authenticator — and **10 backup
+codes**. Save the backup codes somewhere safe; each one works once if you
+ever lose your phone.
+
+> **Lost your phone?** Use a backup code on the code-entry screen, or run
+> `ci-agent reset-2fa` on the server to clear 2FA and enroll again. See
+> [Security](./security.md) for the full 2FA model.
+
 ## Dashboard `/`
 
 Live server gauges (CPU, memory, per-disk usage, load, 10-minute
@@ -50,6 +68,25 @@ run logs, which capture a build/deploy). Pick a single service or stream all of
 them, toggle word-wrap for long lines, and clear the view to watch only new
 output. The stream auto-sticks to the tail unless you scroll up to read
 scrollback.
+
+## Terminals
+
+A **terminal** is an interactive command-line session you drive from the
+browser — the same as typing in a real shell on the server.
+
+- **Server shell** `/terminal` — a shell on the **host** itself (the machine
+  running the agent). Use it for quick checks and fixes without a separate
+  SSH login.
+- **Container shell** `/projects/<slug>/terminal` — a shell **inside** one of
+  a project's running containers (like `docker exec`). Pick the container
+  from the list, then run commands inside it.
+
+Both are full terminals: colours, interactive programs and window-resize all
+work.
+
+> **Important:** the server shell runs with the agent's own permissions,
+> which include Docker access (root-equivalent on the host). Treat it like
+> root SSH access.
 
 ## Docker `/docker`
 
@@ -121,7 +158,10 @@ per project; it covers every private repo owned by that account.
 
 ## Settings `/settings`
 
-Change the admin password, toggle nightly auto-prune. Operational knobs
+Change the admin password and toggle nightly auto-prune. This page also
+shows your **two-factor status** — whether 2FA is on and how many backup
+codes you have left — and lets you **regenerate backup codes** or **change
+the 2FA secret** (which makes you scan a new QR code). Operational knobs
 (concurrency, timeouts, retention, pull policy…) are shown read-only — they
 live in `/etc/ci-agent/config.toml`, the single source of truth; edit the
 file and restart the service to change them.

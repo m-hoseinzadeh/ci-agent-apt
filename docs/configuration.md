@@ -53,8 +53,13 @@ likewise managed in the UI, not in `config.toml` — see
 ```
 ci-agent serve                [--config /etc/ci-agent/config.toml]   # default
 ci-agent set-password         [--config ...]                         # reset admin password
+ci-agent reset-2fa            [--config ...]                         # clear two-factor auth
 ci-agent apply-staged-update                                         # internal; run as root by systemd
 ```
+
+`reset-2fa` clears the two-factor (2FA) secret and backup codes — use it if
+you lose your authenticator phone and your backup codes. The next login
+starts a fresh 2FA enrollment. See [Security](./security.md).
 
 `apply-staged-update` is invoked by the systemd unit's privileged pre-start
 step to swap in a binary staged by the Maintenance page's

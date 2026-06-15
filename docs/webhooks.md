@@ -1,14 +1,22 @@
 # Webhooks
 
-Every project gets two endpoints, shown on its detail page:
+A **webhook** is just a URL you send a small HTTP request to. When the agent
+receives that request, it starts a deployment. This is how your git server (or
+any script) tells the agent "new code is ready — deploy it".
+
+Every project gets two webhook URLs, shown on its detail page:
 
 ```
 POST /hooks/<slug>/<token>/git
 POST /hooks/<slug>/<token>/zip
 ```
 
-The token is a 256-bit random secret embedded in the URL. Rotate it any time
+The `<token>` is a long random secret built into the URL. Rotate it any time
 from the project page (the old URL stops working immediately).
+
+> **Important:** that secret token is the **only** thing protecting the
+> webhook. Anyone who has the full URL can trigger a deploy, so keep it
+> private and rotate it if it ever leaks.
 
 ## Git endpoint
 

@@ -90,8 +90,15 @@ out of the deployed stack.
 
 ## Data
 
-Use **named volumes** for anything persistent. The checkout/workspace is
-wiped after every run, so bind mounts into the source tree will not survive.
+Use **named volumes** for anything that must survive a redeploy (databases,
+uploads, and so on). The checkout/workspace is wiped after every run, so
+bind mounts into the source tree will not survive.
+
+> **Note:** a *named volume* is Docker storage with a name (e.g.
+> `db-data:/var/lib/mysql`) that lives outside the container, so it stays put
+> when the container is rebuilt. A *bind mount* into the cloned source
+> (e.g. `./data:/data`) does **not** survive, because the clone is deleted
+> after each run.
 
 ## Git access
 
