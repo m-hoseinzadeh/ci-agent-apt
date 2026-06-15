@@ -88,22 +88,38 @@ work.
 > which include Docker access (root-equivalent on the host). Treat it like
 > root SSH access.
 
-## Docker `/docker`
+## Storage `/storage`
 
-Disk usage breakdown (images / containers / volumes / build cache),
-the agent's built images with **protected** badges, and cleanup actions:
+A read-only storage report on top, then disk cleanup actions.
 
-- prune dangling images
-- prune stopped containers
-- prune build cache
-- prune unused volumes (double-confirm — volumes hold data!)
-- delete a specific run's images
+**Report (read-only):**
+
+- per-filesystem usage meters
+- a composition estimate of the disk holding the data dir
+  (CI Agent data / Docker / other / free) — “other / system” is whatever the
+  unprivileged agent can't attribute (OS packages, apt cache, system logs)
+- a breakdown of the agent's own data dir (database, run snapshots, backups,
+  workspaces, uploads)
+
+**Cleanup** — each section shows what it removes, an estimate of how much it
+will free, the items affected, and a single button:
+
+- dangling images
+- stopped containers
+- build cache
+- unused volumes (double-confirm — volumes hold data!)
+- delete a specific agent image
+- build workspaces (recreated on the next deploy)
+- old run logs & snapshots (trimmed to retention)
+- stale temp files left by interrupted update/restore uploads
 
 Images belonging to the last *N* successful runs of every project
-(`redeployable_runs_per_project`) are **never** pruned, so recent versions
-always stay redeployable. **The prune actions operate on the whole Docker
-daemon** — if other software shares this host's Docker, its dangling images
-and stopped containers are affected too.
+(`redeployable_runs_per_project`) and project-data volumes are **protected** and
+**never** removed, so recent versions stay redeployable and app data is safe.
+**The Docker actions operate on the whole Docker daemon** — if other software
+shares this host's Docker, its dangling images and stopped containers are
+affected too. OS-level cleanup (apt cache, system logs) is intentionally not
+offered: the agent runs unprivileged — use the **Server shell** for that.
 
 ## Audit `/audit`
 
@@ -135,8 +151,9 @@ changes, token rotations, triggers, cancellations, prunes, settings changes.
     step swaps the binary in. If the new binary crash-loops it is automatically
     rolled back to the previous one after three failed starts. A staged update
     can be discarded until you apply it.
-- **Storage** — size breakdown of the data dir (database, run snapshots,
-  backups, workspaces, uploads) and free disk.
+- **Data dir** — a quick size breakdown of the data dir (database, run
+  snapshots, backups, workspaces, uploads) and free disk. The full storage
+  report and cleanup actions live on the [Storage](./ui.md) page.
 - **Backups** — create a backup on demand (`VACUUM INTO`, safe while runs are
   active), download or delete existing backups. The nightly housekeeping
   backup (keep 7) continues regardless.
