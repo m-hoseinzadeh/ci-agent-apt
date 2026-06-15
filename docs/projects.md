@@ -34,13 +34,25 @@ Pick one, fill a short form (project name, port, and any app variables such as
 a password — generated ones are pre-filled), and the agent creates an **Inline
 compose** project from the template with your values substituted.
 
-The catalog is populated from **catalog sources** — git repositories holding
-`apps/*.toml` templates — managed under **Browse app catalog → Manage sources**:
+The catalog is populated from **catalog sources** holding `apps/*.toml`
+templates, managed under **Browse app catalog → Manage sources**. A source is
+one of two kinds:
 
-- An official source is pre-configured; you can disable or delete it, and add
-  your own repositories. Apps from every enabled source are merged into one list.
-- **Sync** clones a source to this server and parses its templates. Sources are
-  cached locally, so the catalog keeps working offline after a sync.
+- **Git source** — a git repository the agent clones. **Sync** clones it to
+  this server and parses its templates; sources are cached locally, so the
+  catalog keeps working offline after a sync. An official git source is
+  pre-configured; you can disable or delete it, and add your own.
+- **Uploaded bundle** — for offline / air-gapped servers with no git access.
+  Add a bundle source (name only), then use **Upload bundle** on its row to
+  upload a `.zip` of `apps/*.toml` (the same files a git source would hold —
+  the archive may contain `apps/` at its root or inside a single wrapping
+  directory). The agent validates the templates and swaps them into the same
+  on-disk cache a clone produces, so the rest of the catalog is identical.
+  Re-upload to refresh; this reuses the file-upload path used for self-update,
+  so no network is involved.
+
+Apps from every enabled source — of either kind — are merged into one list.
+
 - ⚠ Only add sources you trust: deploying one of their apps runs its containers
   on this host.
 
