@@ -118,6 +118,48 @@ pushes a file into the selected container at a destination path (blank =
 on the host** (a file or directory the agent can read). Useful for dropping a
 config or a restore artifact next to a running app.
 
+## Files
+
+A point-and-click file manager — the same operations as the shell, without the
+typing. Two surfaces share one UI:
+
+- **Host files** `/files` — browse the **host filesystem** as the agent's user.
+  It only sees and changes what that user owns (the same trust level as the
+  server shell — treat it as root-equivalent).
+- **Container files** `/projects/<slug>/files` (the **Files** button on a
+  project, or the project shell page) — browse **inside** a container of the
+  project's stack, picked from a dropdown. Browsing needs a shell in the image,
+  so distroless / `scratch` containers show no listing.
+
+In either mode you can navigate directories, **download** a file to your
+browser, **upload** a file into the current directory, **edit** small text
+files inline, create folders, and rename or **delete** entries. Delete and
+overwrite are confirmed in the browser and recorded in the [audit log](./audit.md);
+deletes are recursive for folders, so double-check the path. Very large files
+should be moved over the shell rather than the inline editor (capped at 1 MB).
+
+## Host `/host`
+
+Host-level controls in one place:
+
+- **Services** — status plus restart / reload / log-tail buttons for `nginx`,
+  the `docker` engine, and `ci-agent` itself. Restarting Docker bounces running
+  containers; restarting ci-agent reloads this panel (it reconnects after a few
+  seconds). "Logs" tails the last 200 `journalctl` lines for the unit.
+- **Admin panel nginx** — tunes the vhost that serves this panel
+  (`/etc/nginx/conf.d/ci-agent.conf`). The knobs (max upload, proxy timeout,
+  extra `location` directives) keep the core proxy generated so you can't lock
+  yourself out. An **Advanced** section can replace the whole config verbatim —
+  `nginx -t` catches syntax errors and rolls back, but a wrong `proxy_pass`
+  still passes the test and would cut off the panel, so a **Reset to default**
+  button and the SSH / loopback fallback are the recovery path.
+- **Global nginx config** — an http-level snippet included before every site
+  (`gzip`, `server_tokens off;`, a shared `limit_req_zone`, …). Server blocks
+  belong to projects, not here.
+
+All three apply through the same safe path as the project nginx page
+(write → `nginx -t` → reload, rolled back on a failed test).
+
 ## Storage `/storage`
 
 A read-only storage report on top, then disk cleanup actions.

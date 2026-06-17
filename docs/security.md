@@ -102,11 +102,22 @@ server {
 
 One-click nginx apply shells out via `sudo -n` to a **narrow NOPASSWD
 allowlist** (installed by the package at `/etc/sudoers.d/`) limited to exactly
-`tee` the project's conf file, `nginx -t`, and `systemctl reload nginx`. No
-interactive prompt; if the rule is absent the call fails fast and the manual
-copy-paste commands still work. TLS cert/key PEMs are written by the
-unprivileged agent into its own data dir (nginx's master reads them), so cert
-issuance needs no `sudo`. See [Domains & TLS](./domains.md).
+`tee` a `/etc/nginx/conf.d/*.conf` file, `nginx -t`, and `systemctl reload
+nginx`. The same allowlist backs the **Host page** editors (the admin-panel
+vhost and the global http snippet are just more conf.d files) and its **service
+controls** — a fixed set of `systemctl restart nginx|docker|ci-agent` and
+`journalctl -u <those>`, nothing arbitrary. No interactive prompt; if the rule
+is absent the call fails fast and the manual copy-paste commands still work. TLS
+cert/key PEMs are written by the unprivileged agent into its own data dir
+(nginx's master reads them), so cert issuance needs no `sudo`. See
+[Domains & TLS](./domains.md).
+
+The **host file manager** (`/files`) and the **server shell** run with the
+agent's own user — they can read and write whatever that user owns, which
+includes Docker access (root-equivalent on the host). There is no extra jail:
+treat both as root SSH access. The container file manager and shell are scoped
+to containers carrying the project's compose label, the same boundary as
+`docker cp` / `docker exec`.
 
 ## Self-update integrity
 
