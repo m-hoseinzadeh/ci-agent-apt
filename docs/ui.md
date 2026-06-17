@@ -25,6 +25,16 @@ A theme toggle at the bottom of the sidebar switches the whole panel between
 (`localStorage`) and applied before first paint, so there's no flash on reload.
 It's purely cosmetic and per-browser — nothing server-side changes.
 
+## Notes
+
+A **Notes** tab on the right edge of every admin page (the docs site
+excepted) slides out a scratchpad. Each note is a free-text box you edit in
+place — it **autosaves** as you type, with no separate form or save button.
+"**+ New note**" adds a row; the trash icon deletes one; a note left empty is
+discarded automatically. Notes are stored server-side (in the database), so
+they're the same in every browser you log in from. Only whether the drawer is
+open or closed is remembered per-browser. Press `Esc` to close it.
+
 ## Dashboard `/`
 
 Live server gauges (CPU, memory, per-disk usage, load, 10-minute
@@ -117,6 +127,14 @@ pushes a file into the selected container at a destination path (blank =
 `/tmp/`). The source is either a **file upload** from your browser or a **path
 on the host** (a file or directory the agent can read). Useful for dropping a
 config or a restore artifact next to a running app.
+
+**Snippets** — a **Snippets** tab on the right edge of the shell pages keeps a
+list of reusable commands (an optional label plus the command), edited in place
+with autosave like [Notes](./ui.md). Hover or focus a snippet and hit
+**Paste** to drop its command into the live shell — it lands at the prompt
+**ready to run** rather than executing on its own, so you can review or tweak it
+first. Snippets are stored server-side and shared across both the server shell
+and every container shell.
 
 ## Files
 
