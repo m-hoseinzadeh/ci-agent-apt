@@ -1,23 +1,4 @@
 Package: ci-agent
-Version: 0.2.2-r78
-Architecture: amd64
-Maintainer: Mohammad Hoseinzadeh <hoseinzadeh.ashraf@gmail.com>
-Installed-Size: 11881
-Depends: adduser, curl, git
-Recommends: docker.io | docker-ce, nginx
-Filename: pool/ci-agent_0.2.2-r78_amd64.deb
-Size: 3839268
-MD5sum: c57ea885f1a13a8587d29db6378321bb
-SHA1: be0c1fbc0478c0a1ca1bcaa2a52f270764577966
-SHA256: 942374a5b6c0072f93cd48d77302a20440d4cef92c660ec48ef0553904c83cf2
-Section: admin
-Priority: optional
-Description: Single-binary CI/CD agent for offline Docker Compose deployments
- Single-binary CI/CD agent for offline Ubuntu servers: receives git/ZIP
- webhooks, builds and deploys Docker Compose stacks behind host nginx, with an
- admin UI for runs, history, redeploys, Docker cleanup and server stats.
-
-Package: ci-agent
 Version: 0.2.2-r79
 Architecture: amd64
 Maintainer: Mohammad Hoseinzadeh <hoseinzadeh.ashraf@gmail.com>
@@ -181,6 +162,25 @@ Size: 3988176
 MD5sum: a99fc2fc25d60f40685d762bd62a2cd3
 SHA1: 30b7c21c85f7dda16e76e1ec1e7fcca58148f24f
 SHA256: 429bae398fd1674a199e1e65b2dc7397b378fcfb7ceab353bdd0badc371e3375
+Section: admin
+Priority: optional
+Description: Single-binary CI/CD agent for offline Docker Compose deployments
+ Single-binary CI/CD agent for offline Ubuntu servers: receives git/ZIP
+ webhooks, builds and deploys Docker Compose stacks behind host nginx, with an
+ admin UI for runs, history, redeploys, Docker cleanup and server stats.
+
+Package: ci-agent
+Version: 0.2.2-r88
+Architecture: amd64
+Maintainer: Mohammad Hoseinzadeh <hoseinzadeh.ashraf@gmail.com>
+Installed-Size: 12574
+Depends: adduser, curl, git
+Recommends: docker.io | docker-ce, nginx, tmux, openssh-server, openssh-client
+Filename: pool/ci-agent_0.2.2-r88_amd64.deb
+Size: 3986532
+MD5sum: 4cdc1cc2bf3466d89cf46ca9db8e63ad
+SHA1: 9fec7c18242944e9f003429ce68ef76aa1989a6a
+SHA256: 14f802f75525cba22439cc4a3bb349af4ec40b1b3593765a416182abf399f387
 Section: admin
 Priority: optional
 Description: Single-binary CI/CD agent for offline Docker Compose deployments
