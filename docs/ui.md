@@ -244,7 +244,13 @@ changes, token rotations, triggers, cancellations, prunes, settings changes.
   come from api.github.com. On an air-gapped server it simply reports
   "unreachable" — expected and harmless. Docker/Compose/nginx results are
   informational; install those through your distribution's packages.
-- **CI Agent update** — two ways to update from this page:
+- **CI Agent update** — three ways to update from this page:
+  - *One-click online (connected server)* — **Download & stage latest** fetches
+    the newest signed release straight from the public apt repository, verifies
+    it (see below), and stages it — no file handling. When **Check for updates**
+    finds a newer version, the same action also appears as an **Update now**
+    button on the CI Agent row of the results table. On an air-gapped server this
+    simply reports the repo unreachable.
   - *apt* — on a connected server, run the shown `apt-get` upgrade commands.
   - *Signed upload (offline)* — upload either the whole
     `ci-agent-offline-*.tar.gz` release bundle (the agent takes the `.deb` and
