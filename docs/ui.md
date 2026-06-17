@@ -130,7 +130,11 @@ the top. It drops an `ssh <admin>@localhost` command at the prompt (the admin
 account is auto-detected) that logs you into a **real host session** via `sshd`,
 outside the sandbox — writable filesystem and full `sudo`. You authenticate with
 your own login password, so the privilege stays tied to a real account rather
-than the service. When `tmux` is installed the session is wrapped in a
+than the service. (First use trusts localhost's host key automatically, so you
+land straight on the password prompt. A *Permission denied* means a wrong
+password, or that this box accepts **SSH keys only** — enable
+`PasswordAuthentication` in `sshd`, or add a key for the agent account.) When
+`tmux` is installed the session is wrapped in a
 persistent `tmux` session, so a browser refresh, network drop, or interrupt only
 **detaches** it — your work keeps running and clicking the button again
 re-attaches.
