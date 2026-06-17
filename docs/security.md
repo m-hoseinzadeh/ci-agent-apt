@@ -112,12 +112,17 @@ cert/key PEMs are written by the unprivileged agent into its own data dir
 (nginx's master reads them), so cert issuance needs no `sudo`. See
 [Domains & TLS](./domains.md).
 
-The **host file manager** (`/files`) and the **server shell** run with the
-agent's own user — they can read and write whatever that user owns, which
-includes Docker access (root-equivalent on the host). There is no extra jail:
-treat both as root SSH access. The container file manager and shell are scoped
-to containers carrying the project's compose label, the same boundary as
-`docker cp` / `docker exec`.
+The **host file manager** (`/files`) and the **server shell** run as the agent's
+own user inside the systemd sandbox below — the host filesystem is **read-only**
+apart from the agent's own data dirs, and `sudo` can't authenticate as the
+passwordless agent account, so neither is a general root console. But the
+agent's Docker access is root-equivalent on the host (e.g. `docker run
+--privileged`), so treat their blast radius as root SSH access all the same. For
+privileged, filesystem-mutating host work the server shell offers an **Open host
+SSH session** button that logs in as a real admin account via `sshd`, outside
+the sandbox (see [the UI guide](./ui.md)). The container file manager and shell
+are scoped to containers carrying the project's compose label, the same boundary
+as `docker cp` / `docker exec`.
 
 ## Self-update integrity
 

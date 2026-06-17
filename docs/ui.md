@@ -118,9 +118,26 @@ browser — the same as typing in a real shell on the server.
 Both are full terminals: colours, interactive programs and window-resize all
 work.
 
-> **Important:** the server shell runs with the agent's own permissions,
-> which include Docker access (root-equivalent on the host). Treat it like
-> root SSH access.
+The server shell is **sandboxed**: it runs as the agent's own (passwordless)
+user with the host filesystem mounted **read-only** apart from the agent's data
+dirs, so `sudo` can't authenticate and host files can't be edited from here. Use
+it for quick read-only checks and Docker commands (which need no `sudo`) — not
+general host administration.
+
+**Open host SSH session** — for privileged or filesystem-mutating work, the
+server shell's **Snippets** drawer has an **Open host SSH session** button at
+the top. It drops an `ssh <admin>@localhost` command at the prompt (the admin
+account is auto-detected) that logs you into a **real host session** via `sshd`,
+outside the sandbox — writable filesystem and full `sudo`. You authenticate with
+your own login password, so the privilege stays tied to a real account rather
+than the service. When `tmux` is installed the session is wrapped in a
+persistent `tmux` session, so a browser refresh, network drop, or interrupt only
+**detaches** it — your work keeps running and clicking the button again
+re-attaches.
+
+> **Important:** although the shell itself is read-only, the agent's Docker
+> access is root-equivalent on the host (e.g. `docker run --privileged`). Treat
+> the server shell's reach as root SSH access regardless.
 
 **Copy a file into a container** — below the container shell, a small form
 pushes a file into the selected container at a destination path (blank =
