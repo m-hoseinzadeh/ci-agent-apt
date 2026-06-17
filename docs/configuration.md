@@ -55,6 +55,8 @@ ci-agent serve                [--config /etc/ci-agent/config.toml]   # default
 ci-agent set-password         [--config ...]                         # reset admin password
 ci-agent reset-2fa            [--config ...]                         # clear two-factor auth
 ci-agent apply-staged-update                                         # internal; run as root by systemd
+ci-agent --version | -V                                              # print the running build and exit
+ci-agent --help | -h                                                 # usage summary
 ```
 
 `reset-2fa` clears the two-factor (2FA) secret and backup codes — use it if

@@ -16,6 +16,35 @@ has two toggles:
   certificate that covers the host exists (see below); until then the toggle is
   armed but the site stays HTTP.
 
+## Default subdomain (`<slug>.<base>`)
+
+Set a global **base domain** under **Settings → Default subdomain** and every
+project automatically gets a `<slug>.<base>` hostname (e.g. project `blog` with
+base `example.lan` → `blog.example.lan`) — no per-project typing. Each project
+page shows the generated host with its own **enable** toggle (on by default);
+unchecking it stops serving the project there. If a **wildcard certificate**
+for the zone exists, the default subdomain is served over HTTPS automatically;
+otherwise it stays plain HTTP. Leaving the base domain blank disables the
+feature for all projects. Explicitly-added domains keep working alongside it.
+
+## Per-project nginx tuning
+
+The project's edit form exposes a few knobs that are baked into its generated
+server block:
+
+| Knob | nginx directive | Default |
+|---|---|---|
+| **Max upload size** | `client_max_body_size` | 1 MB |
+| **Proxy timeout** | `proxy_connect/send/read_timeout` | 60 s |
+| **WebSockets** | adds `Upgrade`/`Connection` headers + HTTP/1.1 | off |
+| **Extra directives** | raw lines added to the proxy `location` block | — |
+
+Raise the upload size for large file uploads, the proxy timeout for slow or
+long-running requests (avoids spurious 504s), and enable WebSockets for
+long-lived WS/SSE connections. Changes are validated with `nginx -t` on save and
+rolled back if invalid — a typo in **Extra directives** can otherwise break the
+vhost until corrected.
+
 ## Applying the nginx config
 
 The project's **nginx** page shows the generated server block, the live service

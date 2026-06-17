@@ -34,6 +34,11 @@ Pick one, fill a short form (project name, port, and any app variables such as
 a password — generated ones are pre-filled), and the agent creates an **Inline
 compose** project from the template with your values substituted.
 
+Leave the **port blank** for an *internal-only* app: the agent strips the
+`{{HTTP_PORT}}` mappings so nothing is published to the host and no nginx vhost
+is created. This is the right choice for databases and caches that only other
+containers reach over the shared Docker network.
+
 The catalog is populated from **catalog sources** holding `apps/*.toml`
 templates, managed under **Browse app catalog → Manage sources**. A source is
 one of two kinds:

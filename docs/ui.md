@@ -18,6 +18,13 @@ ever lose your phone.
 > `ci-agent reset-2fa` on the server to clear 2FA and enroll again. See
 > [Security](./security.md) for the full 2FA model.
 
+## Light & dark theme
+
+A theme toggle at the bottom of the sidebar switches the whole panel between
+**dark** (default) and **light**. The choice is remembered in the browser
+(`localStorage`) and applied before first paint, so there's no flash on reload.
+It's purely cosmetic and per-browser — nothing server-side changes.
+
 ## Dashboard `/`
 
 Live server gauges (CPU, memory, per-disk usage, load, 10-minute
@@ -29,9 +36,15 @@ Refreshes every few seconds.
 Create and edit projects. A project is: name, slug (immutable), a
 [deploy mode](./projects.md) and its source (git URL + branch, a Dockerfile
 path, a prebuilt image, or pasted compose), HTTP port, env vars (encrypted at
-rest; shown masked), optional per-project working directory (monorepos) and run
-timeout. Private GitHub clones authenticate with a token registered on the
-**GitHub tokens** page (see below).
+rest; shown in **cleartext** in the form so you can inspect and edit them — the
+admin is the sole operator of their own box), optional per-project working
+directory (monorepos) and run timeout. Private GitHub clones authenticate with a
+token registered on the **GitHub tokens** page (see below).
+
+The same edit form also exposes **per-project nginx tuning** — max upload size
+(`client_max_body_size`), proxy timeout, a WebSocket/SSE forwarding toggle, and
+a free-text box for extra directives — validated by `nginx -t` on save and
+rolled back if invalid. See [Domains & TLS](./domains.md).
 
 Per project you also get:
 
@@ -43,10 +56,21 @@ Per project you also get:
 - **Redeploy** buttons on successful runs — enabled only while the run's
   images still exist on the host.
 - **Domains** — add multiple hostnames, mark one canonical (others 301), and
-  opt each into HTTPS. See [Domains & TLS](./domains.md).
+  opt each into HTTPS. When a global **base domain** is set (Settings → Default
+  subdomain), the project also gets an auto-generated `<slug>.<base>` URL with
+  its own enable toggle. See [Domains & TLS](./domains.md).
 - **nginx** page — live status, the generated server block with a drift badge,
   and **one-click apply** (write → `nginx -t` → reload) or the equivalent
   copy-paste commands.
+- **Container lifecycle** — a table of the deployed stack's containers
+  (service, container, state) with per-container **Start / Stop / Restart**
+  buttons. These act on the running containers, not on a redeploy.
+- **Custom actions** `/projects/<slug>/actions` — operator-defined operations
+  that run inside a chosen container: a plain **run** command, a **backup**, or
+  an **upload-and-restore** (upload a file, then run a load command with
+  `{{FILE}}` substituted). Actions are defined as a small JSON array on the
+  Actions page; once any exist, an **Actions** button appears on the project
+  page. Handy for database dumps/restores. See [Projects](./projects.md).
 - **Container logs** `/projects/<slug>/logs` — live `docker compose logs`
   for the deployed stack, with a service picker, word-wrap toggle, and a clear
   button (see below).
@@ -87,6 +111,12 @@ work.
 > **Important:** the server shell runs with the agent's own permissions,
 > which include Docker access (root-equivalent on the host). Treat it like
 > root SSH access.
+
+**Copy a file into a container** — below the container shell, a small form
+pushes a file into the selected container at a destination path (blank =
+`/tmp/`). The source is either a **file upload** from your browser or a **path
+on the host** (a file or directory the agent can read). Useful for dropping a
+config or a restore artifact next to a running app.
 
 ## Storage `/storage`
 
@@ -175,7 +205,10 @@ per project; it covers every private repo owned by that account.
 
 ## Settings `/settings`
 
-Change the admin password and toggle nightly auto-prune. This page also
+Change the admin password and toggle nightly auto-prune. Set a global
+**Default subdomain** base domain here — every project then becomes reachable at
+`<slug>.<base>` (a wildcard cert for the zone, if present, auto-enables HTTPS);
+blank disables it. This page also
 shows your **two-factor status** — whether 2FA is on and how many backup
 codes you have left — and lets you **regenerate backup codes** or **change
 the 2FA secret** (which makes you scan a new QR code). Operational knobs
