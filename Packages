@@ -18,17 +18,17 @@ Description: Single-binary CI/CD agent for offline Docker Compose deployments
  admin UI for runs, history, redeploys, Docker cleanup and server stats.
 
 Package: ci-agent
-Version: 0.2.2-r91
+Version: 0.2.2-r101
 Architecture: amd64
 Maintainer: Mohammad Hoseinzadeh <hoseinzadeh.ashraf@gmail.com>
-Installed-Size: 12567
+Installed-Size: 12655
 Depends: adduser, curl, git
 Recommends: docker.io | docker-ce, nginx, tmux, openssh-server, openssh-client
-Filename: pool/ci-agent_0.2.2-r91_amd64.deb
-Size: 3987216
-MD5sum: dd7f12ff9bf95adb7de78395cb7d0e14
-SHA1: ae7df5eeecf3bcaa4ac2e34155b0fa5e6b4036ba
-SHA256: 295d48d5af9feddb3b012bcff07a37213e95d5684dde76f96f11e22eb8f1b906
+Filename: pool/ci-agent_0.2.2-r101_amd64.deb
+Size: 4012180
+MD5sum: 509b6c23bb8dc2212a7857d9556664ba
+SHA1: c5c8c9c222e8654c27e6c8f1cc5748321fcd4198
+SHA256: 02740919c89643a016c8398a95513457ef2d0c9b21df45d6a5bf8bd87c6eeedf
 Section: admin
 Priority: optional
 Description: Single-binary CI/CD agent for offline Docker Compose deployments
