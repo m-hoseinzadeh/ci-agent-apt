@@ -2,39 +2,39 @@
 Hash: SHA512
 
 Architectures: amd64
-Date: Fri, 19 Jun 2026 13:19:17 +0000
+Date: Fri, 19 Jun 2026 13:24:55 +0000
 Label: ci-agent
 Origin: ci-agent
 Suite: stable
 MD5Sum:
- c73cebb0676d3a63f360f4efa70c5bb5             8074 Packages
- 2c52eafc0d392a2afd8c867211e36e9c             1556 Packages.gz
- 748ef0bd9ab816e6c18a7569cb516018              106 Release
+ ab7299d3ea45ceff1df81bc4c9f25bde             8076 Packages
+ 111574517ce2329ecd576c0e3e8b81d4             1549 Packages.gz
+ 56e1a4922cad18bf0492a8b48ecdafda              106 Release
 SHA1:
- 9285ef680683016a70ba7c603e6486cb030a36c7             8074 Packages
- cf6ef07b94864ee4cbb340a21209e15ef24fae54             1556 Packages.gz
- 12acb84cd768ab95160ca51a6327290b3c6dd834              106 Release
+ dbc0e7cc93aa558d21450e17663aaa7dcecbc262             8076 Packages
+ a1dbf35f1d16a63cb9735af4c8d36c0847a840fa             1549 Packages.gz
+ fb7cb8fa4c3ca530e65c4eaa38c492324edcd270              106 Release
 SHA256:
- e20fe578f299e627b9a677d5e7dbdc9c47b8cc40aeb68c4534c904b58c2694c6             8074 Packages
- 3e476ef1ad23519726a21845f9571b39b949befcb15a4c3b4df92318006c4583             1556 Packages.gz
- b7b5f543fdc93eb57d66d71e2baa0f96253a0f21eb815ae82b60dbf6513c64cb              106 Release
+ 0976d4dc271b1f7cb5fad6485a0eff240a5111669b969358c989b48f8db3270f             8076 Packages
+ 2f38dece8dac6d9a9ed674444cd504b5ab0e2c584633b821e2ea81fe1d437c60             1549 Packages.gz
+ ccdc7713604debb96d248b97fb72ca06ffa521f260cdd04ae02630bdc8645f4c              106 Release
 SHA512:
- ebd28c0693dce9fbdbafba2e21d29b44963c92ffdaef1fb206d5d90ed29bdde2f5fcd161c5415eebcf516cede7566340c62d6eb3757bddc8af714f8e87f7381f             8074 Packages
- 89b6a96f58523a27c096c75caa83e0056b8ab7afe039b1b81c037b04fc338bfe28a2ca60136c0514b8f74ebad0baf4ff5b686880ea030ac9286b1450ba5947eb             1556 Packages.gz
- 6d612be150c171ecad0d83f2ce77f2e78b771001c7d34c66c289d2be6ba347febbcf46a0c6b7db847bbbea049b9f6dd4da26282e569cfc9d94a3f747e74c5d2a              106 Release
+ 655bafc558e15bd669cf885a1acd0531017b64378218a82d38c78970dec28b309cc2f7a2912cc672279e823fc60cb26a0b77f414ba485785370cc12076661dd9             8076 Packages
+ 3f7c1304035dc3f50ad6ed574a7495aa2b5f1f2efe20181b83cc9cfe64bb4d2dfe0143c6f966ec726b976aac40b505a695f9c07a6bd6619944586281e3b3f83b             1549 Packages.gz
+ eb8fc50254f78bed8877378680ebff45fbd9b4e954bcf6abe54a73afe9cea197ab7fe59c2b832ea5379e8fd5d45f1b7efa8828eae94452d798a0f358e0fb9aa4              106 Release
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAEBCgAdFiEEqA9zCc8mEz2+iOLsnFSJquhr8VkFAmo1QdUACgkQnFSJquhr
-8VkGQg//YcIdx0uVE3usR4yle4JspJz54HM4UGbSurZvffiwnoHX9HrvaFheKphw
-fXcUosFTA+R7Z3qik7Rp1Z40nTw8XSkXrIM1F7EHRnItfFbBrgsr9wVF/AspHo6x
-6YLe5O6SbLz8Ffa++Y7xMbUAVAyWc/IKzzqWlxRJSJma7NEoxo7DdXQd9didEKBr
-rNUyK8wJMrEctoixkFo9Lxsuh3Jd28ILzFb431RQcd8FF0joEYBsnmF3ZwX7ZALP
-8jLE6OBhCa+AeAvEr9sgnAhexnJ06466YjZlBh0ZFJU2y0BM8yM8ElOA6hC1fUBA
-jzPno/qYApZHUbG5FyaUu2u4In9AMGeawhFi9HxSDHqA9Wqr7sA+E4/FVxqvqPlG
-0xYE/G4om6X+SfCvtTYIGw6IngxwgdXEqmSDb6yr7bHSP2RzvpPBrjtP4CUXnP14
-5KwvU4Y5o2SARnlokoWBs+DNnug3VH3uR54jAjvPwfd9BzYeOUNysQzKqst/WvZL
-pNZ1PWJylcbkA9wzi+/tIpOVPfj0F7Gs+/YZx4RWtFccL6pl7LJD2iS0IaPwc/x5
-Tkk30xNZgowTQF1iq34pBQo7J2y1D+KGETaZkW0cNWVGmCbPNBAS4HoWh8NzCIiZ
-siHa6jAgeJsA3MrMcV4V4+InlQYMM0dgd9SpwuOemw8Ls2/zzDg=
-=XBgp
+iQIzBAEBCgAdFiEEqA9zCc8mEz2+iOLsnFSJquhr8VkFAmo1QycACgkQnFSJquhr
+8VnQLw//ZT2QYhxgTYD6C2HBwCPVM4M63BWAl1aiOh/kX5UHd3bmLU7kI/5klKoX
+Tf5TSci/5VWFeAeYtURoIyEjtnIYB2Yp/Y6xd3Xw02gWVe9YnnBTUM4R+z6MyfvA
+Ffmaa95mAPNTF4aEJeugG0oHP8O8bVhs+vk1R+qMiXLXTZpjF/oE2pV8U39nys4e
+TvzhuZIXKLefXnI0EXwkMaexTxBGjPgfGQUOHd+CgZleqwwOnvBdzTgrQSnZQy0n
+7WisQZ/OI4KLHZKbbXi6lJDuk1aJKxYchVnRn1uvGJnjhKDZDT5ESfCWP3qcCuPP
+XaJ0bYWldOFb8n/TJXmPxQ65iiUwrgs08VVj8B5JHzTFb15m1Wxl/YOujs/0ebn5
+dWm6h3x/ySxKQ9VNKMtk0b5LDb0uAGAhiAr3sXN0A6s/1dY1yDpQzaOn1mvEmFMa
+fAYo2NGKwMlvFfrs0kNhVKqONPuiK3UU51SmUrdMJ5OcSYxdiIO6anrvfs97HpMR
+Estk3DHW4xjvQlb6fEDA5IVOmV/gby9/SYZV54YD6Epfzddd9AKYbTHiUBgBLSBx
+/SGMRYcesTWEOxN/iqXoOx6/aGLPX37NShDu7f8DpOIWtGfiRyZK3QPJN5lhnZru
+zZJSvdAXJpklGmKofPvvJ8QSBWUhnwSBAwZswOz+v7kMBE+a1H4=
+=/OSR
 -----END PGP SIGNATURE-----
