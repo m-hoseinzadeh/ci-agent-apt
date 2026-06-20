@@ -2,39 +2,39 @@
 Hash: SHA512
 
 Architectures: amd64
-Date: Sat, 20 Jun 2026 09:02:47 +0000
+Date: Sat, 20 Jun 2026 11:08:09 +0000
 Label: ci-agent
 Origin: ci-agent
 Suite: stable
 MD5Sum:
- 0da95c42a58463133264b76965ef22fa             8080 Packages
- cb8dd9e85f975a57d77e3619087e8196             1547 Packages.gz
- 8a832e4bdfc235b1a0be0cddf4e8a545              106 Release
+ f0408c1191db12c696f05cf4885f5377             8080 Packages
+ aa786a20e84bdd618e153c09de81b800             1548 Packages.gz
+ c9a39dc88c5c7ebf6dd55dc5e598ce0c              106 Release
 SHA1:
- d56630be401520cf904f6e14ae79868e402b4e8c             8080 Packages
- 2089f758317aa47b810e150cef674c0f514468d2             1547 Packages.gz
- 63507eb8f0922185f4ade742ad579366d99692cc              106 Release
+ f2dc00e30ac7799547944fe51f8ec35c37dd56a2             8080 Packages
+ 08ebaa7cc6a17b4d2a4543d77239ac25d8a9ccea             1548 Packages.gz
+ b403e30231e810f4dcc150391e45092ad167deb1              106 Release
 SHA256:
- de7a36898fe3b11ed6368024f7b4edbd81bd0fb2b4993b79985829b605a99db4             8080 Packages
- c29dddae5ce89e6ed14fb15d1eb6a1a92b2e27a9eb9bd12b3f4edaf85f745674             1547 Packages.gz
- 8550a6c47253eca99cb5ec75e89a6a99a754fcca309b4ed3b87b94ea478b0a58              106 Release
+ 16c0efac5f60077eb1812acf2cc0be80536a1b509184c4f0bbece2d7b4f6fe58             8080 Packages
+ b26618f0fc4f02868d2e7326c00c5fed3fcb4bbe82bf3e5122e8f53759226acf             1548 Packages.gz
+ 046d54af735eeb7811bf8da08841536a75f163cea017791489030de041877341              106 Release
 SHA512:
- 6243da7d9d8e392c6342f80417856825bf49d8737227950c0d57f6ffd8e375c680379493f389bb5d2875bb5d07194d4ec3f747b3b2cfaca204d284e184c480d0             8080 Packages
- c0a419ad4fb697ec19ed5ba19da2cec896b8c80248606f9712923fdd37a350847277a682ea2eb120ccff4fd6b696dbdca78788548227d1a22774404f2d3ba9c1             1547 Packages.gz
- 0908b645f8b9abdd9051c93bccca3c1d8b8e86aa80bacfed8301b046697cf8880fe4f7d3287209be0131a746b1e6b010eac73ad47fbdb43fbcdfd00b70c32c10              106 Release
+ 166a453d6e0f36598ecf6cc97ac32507cd8a627d005fd632e2915486bbd326b9e1e40edeee803f7da64e1deef621ca3bdffe40a3e9b91296ad4cd25826f0dc17             8080 Packages
+ c0bc025377efb49cb35f3c1113dfd844ba35153d24e41c8dadef53dec611de0203b814be8f3be8a533ffaa741a31a972889f730adb953dc4d9cd8206551e3708             1548 Packages.gz
+ 29eaf70631e294613e7c195bf0127b90ecd122ea99a4fd6f69d7d5f4ffb9f51cab46260199c5f3b0810c6562e07fc08ed000efc3e8ce0b61b953e1174313fbc5              106 Release
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAEBCgAdFiEEqA9zCc8mEz2+iOLsnFSJquhr8VkFAmo2VzcACgkQnFSJquhr
-8Vma5Q//f9xQrtC8mP7vgMdg3kwdrV0Jx1iNyDTPZ/yt4O5jK9qv06jcK0xZpPst
-oQbaqXZu59FWgsscHUsUmcPrLaH9boyeTqr4AsAT/Xhy+0OXJUUo6VgvesfvskXI
-aYAcuSJnncfpoEnQmbI9Hj+vfppsjre7Y4GNLEXx8y8V7PgPCUb9FS0L1ZUV8efQ
-2C85jWsJEEUfPKpuNdZGdxinm8eYdxHNsoQI7uXyGFFBJAPQVxCKqJP/b2pe/hk5
-5nHWEhLqhkicSXMbrwIcDLAV6QolyQiIQAQLfCzePDUaoEFonCtWqeo2FIU94ZHo
-CoiNM0252yLqnT+nhRyfXaq07UouSZQh1jgmA2WZoeA2GT1tmwB7WUaT4kmf84jK
-vxpXtFoJ05V/nKG3lknA23cxj1ZBfk4b93OmCcn/5M8i7DTs08dlSEXzACYHmYMp
-+40hUUxgIQQ61VrZkRJ5SZGnCbA99YDxt00VqBoUkucJ80DzzRjlYHqUjB5wP5my
-WJsBIGfdRnx26OVWggW9b3c39iOAI++I0GIx5ZkIdlv0fGg8M2+WoekF6xcjxjtX
-+aZvDDJTXz5nZL5KS54xWKWQ4yYCCfvF9RIVP4hP1iaO2mUAQYLS94g0EXhE3a/O
-ASTsAtf02RtU3xONACWThqK0AC5she1YngiJmmBmvNpcMVXqE+U=
-=kxM0
+iQIzBAEBCgAdFiEEqA9zCc8mEz2+iOLsnFSJquhr8VkFAmo2dJoACgkQnFSJquhr
+8VkE/A//XwBrVB39FAQoloSbC3BFFn6cXsOnK0MYxuKhr+sms9lNlv19aSKF99cX
+N3xZr5r+wawTwmX6x45ar/6aInaMllyh5U1s0FUMhsprstFR16aNdaJReNrAzDHB
+g6PBUUjAW/9DGsMiDhiCly/2cabrsyrueIxU3gyC9XhVzXuWYoD117z3ArQ4wlgz
+w2C/5NBBa8OlymJWx+SEVELqoeFzu6BtBGdgpkfqb15vgPQMfqy5LmjrZgpN9Pls
+1U/NVGnXiRiHfrE+yGkhwxXVUNRj1hgDrAABQa9j2B/HWu7PNzdxFsiyAgeXRAwQ
+5oCE70kIwI2lXgTEZ2sMeSiksRuBKX8/xpmSK/xCoFMlFzOvtvpsV7aGv8asxPYs
+F4TMptW2huX8oYkNQ+e2Om3gTwIczcHb6pVe4y1Ek48+uWqa0nf1HAlQrTJGblkr
+NLsIjALfu6osRoTksVWjblK36DEYESZdf0QkDGg6ODc0PT7JnesJRGmYT0HT/OZe
+iQjUqa1dwssqaUmS4clnJasyeTD4Z1C7mGHUDV8xeKZvmCYXgJrGlASlNomfxFYl
+OPsJyVksnmriupu23VJsREBevZ9qmPduxueIu93gMKkePKHvPwjT4uQp+nNOktUY
+S6a1Wy6C+2vGd8uqQjy7qVaiEmNPldtMCOCRMKEHCpnHE11AYXo=
+=N/ro
 -----END PGP SIGNATURE-----
