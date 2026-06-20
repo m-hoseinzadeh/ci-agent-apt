@@ -18,9 +18,9 @@ Pick one when you create the project:
 **Compose** and **Dockerfile** are *source* modes: they fetch from git or a
 ZIP and rebuild every run, so webhooks and manual git/ZIP runs apply. **Image**
 and **Inline compose** are *sourceless*: there is nothing to clone or build, so
-they have no webhook endpoints — deploy them with the **Deploy** button on the
-project page (trigger `manual_deploy`). Use them for off-the-shelf images
-(databases, caches) or a hand-written stack you don't keep in git.
+they have no webhook endpoints — deploy them with the **Deploy now** button on
+the project's Overview tab (trigger `manual_deploy`). Use them for off-the-shelf
+images (databases, caches) or a hand-written stack you don't keep in git.
 
 The conventions below describe **Compose** mode in full; Dockerfile and Image
 modes follow the same env/port/volume rules through the compose file the agent
@@ -140,6 +140,32 @@ each one into HTTPS — see **[Domains & TLS](./domains.md)**.
 The agent warns (without blocking) when the compose file doesn't publish the
 registered port, or when another project claims the same port.
 
+A project can also expose **extra ports** (on the **Domains & Ports** tab) when
+it runs more than one service — each extra port gets its own domains and default
+URL. See [Domains & TLS](./domains.md).
+
+## Categories & networking
+
+Each project has an optional **category**. Projects in the **same category**
+share one private Docker network and can reach each other by **service name**
+(handy when an app needs to talk to a database you run as a separate project).
+Projects in **different** categories are network-isolated and cannot see each
+other.
+
+- Leave the category **blank** to use the shared `default` category.
+- Changing a project's category moves it to the new network on its **next
+  deploy**.
+
+> **What this means.** A *Docker network* is a private network that only the
+> containers on it can use. Putting two projects in the same category is how you
+> let them connect — for example, a web app in category `shop` can reach a
+> database also in category `shop` at `db:5432`, with nothing exposed to the
+> outside.
+
+> **Example.** Run Postgres as one project and your web app as another, both in
+> category `shop`. The web app connects to the database at its service hostname
+> over the shared network — you never publish the database port to the host.
+
 ## Tests (optional)
 
 Add a service named exactly `ci-test` with the `ci` profile:
@@ -176,13 +202,17 @@ bind mounts into the source tree will not survive.
 ## Git access
 
 - Public/internal repos over `https://` or `file://` work as-is.
-- **Private GitHub repos over HTTPS**: register a personal access token for the
-  repository owner on the **GitHub tokens** page (one token per GitHub
-  username, with `repo` read access). When a project clones
-  `https://github.com/<owner>/...`, the token registered for `<owner>`
-  authenticates it automatically. Tokens are encrypted at rest, only ever sent
-  to `github.com` exactly (lookalike hosts and userinfo tricks in
-  webhook-supplied URLs are rejected), never appear in command lines or run
-  logs, and are masked like any project secret.
+- **Private repos over HTTPS**: register a credential once on the
+  **Git credentials** page (in the sidebar) — see the
+  [Admin UI guide](./ui.md). Two shapes:
+  - **GitHub** — host `github.com`, the repo **owner**, and a personal access
+    token (with `repo` read access) as the secret. When a project clones
+    `https://github.com/<owner>/...`, the matching credential authenticates it
+    automatically. GitHub tokens are only ever sent to `github.com` exactly
+    (lookalike hosts and userinfo tricks in webhook-supplied URLs are rejected).
+  - **Other git hosts** — the host name, an account **username**, and its
+    password or token as the secret.
+- Credentials are encrypted at rest, never appear in command lines or run logs,
+  and are masked like any project secret.
 - Clones never prompt (`GIT_TERMINAL_PROMPT=0`): a private repo without
   working credentials fails fast with a clear error instead of hanging.

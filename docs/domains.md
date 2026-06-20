@@ -6,15 +6,23 @@ plain host service you installed.
 
 ## Domains per project
 
-A project can serve **many hostnames**. Add them on the project page; each row
-has two toggles:
+A project can serve **many hostnames**. Add them on the **Domains & Ports** tab
+of the project page. Each domain has:
 
-- **Canonical** — at most one domain per project. When a canonical is set, the
-  other domains **301-redirect** to it (good for `www → apex`, or retiring an
-  old name). With no canonical set, every domain serves the app directly.
+- **Canonical** — at most one canonical domain per port. When a canonical is
+  set, the other domains on that port **301-redirect** to it (good for
+  `www → apex`, or retiring an old name). With no canonical set, every domain
+  serves the app directly.
 - **HTTPS** — opt this hostname into TLS. It only takes effect once a
   certificate that covers the host exists (see below); until then the toggle is
   armed but the site stays HTTP.
+
+If the project has **extra ports**, the add-domain form also asks **which port**
+the domain should proxy to, so you can point different hostnames at different
+services in the same project.
+
+Use **Rename** to change a hostname, **Manage** / **Add SSL** to handle its
+certificate, and the **×** button to remove it.
 
 ## Default subdomain (`<slug>.<base>`)
 
@@ -27,23 +35,44 @@ for the zone exists, the default subdomain is served over HTTPS automatically;
 otherwise it stays plain HTTP. Leaving the base domain blank disables the
 feature for all projects. Explicitly-added domains keep working alongside it.
 
-## Per-project nginx tuning
+## Ports and default URLs
 
-The project's edit form exposes a few knobs that are baked into its generated
-server block:
+A project always has one **primary HTTP port**. You can add **extra ports** on
+the **Domains & Ports** tab — useful when one project exposes more than one
+service (for example an app on one port and its metrics on another).
+
+Each port gets:
+
+- its own **slug** (a short DNS-safe name) and a **default URL**
+  `<port-slug>.<base>` when a base domain is set (see below);
+- its own **domains** (the host port they proxy to); and
+- its own **proxy tuning** (the next section).
+
+A project-wide **Default URL** toggle turns the auto-generated `<slug>.<base>`
+URLs on or off for every port at once.
+
+## Per-port nginx tuning
+
+On the **Domains & Ports** tab, each port has a collapsible **Proxy tuning**
+panel. The knobs are baked into the generated server block and apply to **every**
+domain that proxies to that port (including its default URL):
 
 | Knob | nginx directive | Default |
 |---|---|---|
-| **Max upload size** | `client_max_body_size` | 1 MB |
-| **Proxy timeout** | `proxy_connect/send/read_timeout` | 60 s |
-| **WebSockets** | adds `Upgrade`/`Connection` headers + HTTP/1.1 | off |
+| **Max upload (MB)** | `client_max_body_size` | 256 MB |
+| **Proxy timeout (s)** | `proxy_connect/send/read_timeout` | 300 s |
+| **Forward WebSocket / SSE upgrades** | adds `Upgrade`/`Connection` headers + HTTP/1.1 | off |
 | **Extra directives** | raw lines added to the proxy `location` block | — |
 
 Raise the upload size for large file uploads, the proxy timeout for slow or
-long-running requests (avoids spurious 504s), and enable WebSockets for
-long-lived WS/SSE connections. Changes are validated with `nginx -t` on save and
-rolled back if invalid — a typo in **Extra directives** can otherwise break the
-vhost until corrected.
+long-running requests (avoids spurious 504s), and turn on the WebSocket / SSE
+toggle for long-lived connections. Click **Save proxy settings**. Changes are
+validated with `nginx -t` on save and rolled back if invalid — a typo in
+**Extra directives** can otherwise break the vhost until corrected.
+
+> **What this means.** "Per-port" tuning is set once per port and reused by all
+> of that port's domains, because every hostname on a port reaches the same
+> backend service. If you have extra ports, tune each one separately.
 
 ## Applying the nginx config
 

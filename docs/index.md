@@ -35,7 +35,10 @@ nginx.
 
 ## Where to go next
 
+**New here? Start with Installation, then take the UI tour.**
+
 - **[Installation](./install.md)** — get it running in five minutes.
+- **[Admin UI guide](./ui.md)** — a tour of every page in the panel.
 - **[Project conventions](./projects.md)** — what a deployable repo must look like.
 - **[Webhooks](./webhooks.md)** — trigger deployments from anywhere.
 - **[Domains & TLS](./domains.md)** — multiple domains, nginx, certificates.

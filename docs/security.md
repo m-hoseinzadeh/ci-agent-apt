@@ -43,8 +43,9 @@ Webhooks authenticate with a 256-bit random URL token (constant-time
 compare; unknown slug and bad token are both `404` so projects can't be
 enumerated) — see [Webhooks](./webhooks.md).
 
-Project env vars and GitHub personal access tokens are encrypted at rest
-(XChaCha20-Poly1305, key file `0600`) and masked in run logs and the UI.
+Project env vars and stored **git credentials** (tokens or passwords for private
+clones) are encrypted at rest (XChaCha20-Poly1305, key file `0600`) and masked in
+run logs and the UI.
 
 ## Network exposure
 
@@ -104,13 +105,16 @@ One-click nginx apply shells out via `sudo -n` to a **narrow NOPASSWD
 allowlist** (installed by the package at `/etc/sudoers.d/`) limited to exactly
 `tee` a `/etc/nginx/conf.d/*.conf` file, `nginx -t`, and `systemctl reload
 nginx`. The same allowlist backs the **Host page** editors (the admin-panel
-vhost and the global http snippet are just more conf.d files) and its **service
+vhost and the global http snippet are just more conf.d files), its **service
 controls** — a fixed set of `systemctl restart nginx|docker|ci-agent` and
-`journalctl -u <those>`, nothing arbitrary. No interactive prompt; if the rule
-is absent the call fails fast and the manual copy-paste commands still work. TLS
-cert/key PEMs are written by the unprivileged agent into its own data dir
-(nginx's master reads them), so cert issuance needs no `sudo`. See
-[Domains & TLS](./domains.md).
+`journalctl -u <those>` — and the **Firewall page**, which is limited to the
+`ufw` status/allow/deny/reject/delete/enable/disable/reload commands (the
+arguments are validated in-process). Nothing arbitrary. No interactive prompt;
+if the rule is absent the call fails fast and the manual copy-paste commands
+still work. The agent re-checks and repairs this allowlist on every boot, so it
+self-heals if it drifts. TLS cert/key PEMs are written by the unprivileged agent
+into its own data dir (nginx's master reads them), so cert issuance needs no
+`sudo`. See [Domains & TLS](./domains.md).
 
 The **host file manager** (`/files`) and the **server shell** run as the agent's
 own user inside the systemd sandbox below — the host filesystem is **read-only**

@@ -18,12 +18,17 @@ ever lose your phone.
 > `ci-agent reset-2fa` on the server to clear 2FA and enroll again. See
 > [Security](./security.md) for the full 2FA model.
 
-## Light & dark theme
+## Themes
 
-A theme toggle at the bottom of the sidebar switches the whole panel between
-**dark** (default) and **light**. The choice is remembered in the browser
-(`localStorage`) and applied before first paint, so there's no flash on reload.
-It's purely cosmetic and per-browser — nothing server-side changes.
+A **theme picker** sits at the bottom of the sidebar. Click it to open a list of
+**16 themes**, grouped into **Dark** (8) and **Light** (8), each with a small
+colour swatch and its own font. Examples: *Dark · slate* (the default),
+*Ocean · azure*, *Crimson · red*, *Light · gray*, *Rose · blush*.
+
+Pick one and the whole panel changes instantly. Your choice is remembered in the
+browser (`localStorage`) and applied before the page draws, so there's no flash
+on reload. It's purely cosmetic and per-browser — nothing on the server changes,
+and other people who log in keep their own choice.
 
 ## Notes
 
@@ -41,53 +46,81 @@ Live server gauges (CPU, memory, per-disk usage, load, 10-minute
 sparklines), active and queued runs, and the most recent run history.
 Refreshes every few seconds.
 
-## Projects `/projects`
+The **Projects** list shows every project with a live **health badge** (see
+[Operations](./operations.md) for what the badge means) and its category. Two
+buttons sit at the top:
 
-Create and edit projects. A project is: name, slug (immutable), a
-[deploy mode](./projects.md) and its source (git URL + branch, a Dockerfile
-path, a prebuilt image, or pasted compose), HTTP port, env vars (encrypted at
-rest; shown in **cleartext** in the form so you can inspect and edit them — the
-admin is the sole operator of their own box), optional per-project working
-directory (monorepos) and run timeout. Private GitHub clones authenticate with a
-token registered on the **GitHub tokens** page (see below).
+- **New project** — opens the create form.
+- **Browse app catalog** — install a ready-made app instead of writing compose
+  by hand (see [Project conventions](./projects.md)).
 
-The same edit form also exposes **per-project nginx tuning** — max upload size
-(`client_max_body_size`), proxy timeout, a WebSocket/SSE forwarding toggle, and
-a free-text box for extra directives — validated by `nginx -t` on save and
-rolled back if invalid. See [Domains & TLS](./domains.md).
+### Creating a project
 
-Per project you also get:
+A project is: **name**, **slug** (lowercase, immutable after creation), an
+optional **category** (see below), a [deploy mode](./projects.md) and its source
+(git URL + branch, a Dockerfile path, a prebuilt image, or pasted compose),
+**HTTP port**, **env vars** (encrypted at rest; shown in **cleartext** in the
+form so you can inspect and edit them — the admin is the sole operator of their
+own box), an optional **working directory** (for monorepos) and a **run
+timeout**. The button is **Create project**.
 
-- **Webhook URLs** with a rotate-token action (source modes only).
-- **Manual triggers** — run from the configured repo (with optional
-  URL/branch override), from a ZIP URL, or by uploading a ZIP file; sourceless
-  (Image / Inline-compose) projects get a **Deploy** button instead.
-- **Run history** with per-run status, commit, duration and error summary.
-- **Redeploy** buttons on successful runs — enabled only while the run's
-  images still exist on the host.
-- **Domains** — add multiple hostnames, mark one canonical (others 301), and
-  opt each into HTTPS. When a global **base domain** is set (Settings → Default
-  subdomain), the project also gets an auto-generated `<slug>.<base>` URL with
-  its own enable toggle. See [Domains & TLS](./domains.md).
-- **nginx** page — live status, the generated server block with a drift badge,
-  and **one-click apply** (write → `nginx -t` → reload) or the equivalent
-  copy-paste commands.
-- **Container lifecycle** — a table of the deployed stack's containers
-  (service, container, state) with per-container **Start / Stop / Restart**
-  buttons. These act on the running containers, not on a redeploy.
+> **What is a category?** Projects in the **same category** share one private
+> Docker network and can reach each other by hostname. Projects in **different**
+> categories are network-isolated. Leave it blank for the shared `default`
+> category. Changing it moves the project to another network on its next deploy.
+
+Private clones authenticate with a credential you register on the
+**Git credentials** page (see below).
+
+### The project page — four tabs
+
+Open a project and you get four tabs:
+
+- **Overview** — the **Health** card (a roll-up of the running stack's state),
+  the project's **webhook URLs** with a *Rotate token* button (source modes
+  only), a **Trigger a run** card, and a **Network** card showing the category
+  and any sibling projects on the same network.
+- **Domains & Ports** — the ports table (add extra ports, each with its own
+  slug and default URL), the domains for each port, the *Default URL* toggle,
+  and **per-port nginx proxy tuning** (see [Domains & TLS](./domains.md)).
+- **Deployments** — the **Run history** table and the **Containers** card.
+- **Settings** — the edit form (name, category, git, branch, mode, paths,
+  ports, run timeout, env vars), **Archive / Unarchive**, and the **Danger
+  zone** (delete).
+
+A fifth **Actions** tab appears only when the project has custom actions defined
+(see below). The panel remembers which tab you last used per project.
+
+### What you can do on the project page
+
+- **Trigger a run** (Overview) — run from the configured repo (with an optional
+  URL/branch override), from a ZIP URL, or by uploading a ZIP file. Sourceless
+  projects (Image / Inline compose) show a **Deploy now** button instead.
+- **Run history** (Deployments) — each row shows the run number, status, commit
+  message + committer, start time and duration. A failed run expands to show its
+  error.
+- **Redeploy** (Deployments) — re-run a past **successful** deploy with no
+  fetch or build. The button is greyed out once that run's images are pruned.
+- **Containers** (Deployments) — a table of the deployed stack's containers
+  with per-container **Start / Stop / Restart / Pause** buttons. These act on
+  the live containers, not on a redeploy.
 - **Custom actions** `/projects/<slug>/actions` — operator-defined operations
   that run inside a chosen container: a plain **run** command, a **backup**, or
   an **upload-and-restore** (upload a file, then run a load command with
-  `{{FILE}}` substituted). Actions are defined as a small JSON array on the
-  Actions page; once any exist, an **Actions** button appears on the project
-  page. Handy for database dumps/restores. See [Projects](./projects.md).
-- **Container logs** `/projects/<slug>/logs` — live `docker compose logs`
-  for the deployed stack, with a service picker, word-wrap toggle, and a clear
+  `{{FILE}}` substituted). Define them as a small JSON array on the Actions
+  page; once any exist, the **Actions** tab appears. Handy for database
+  dumps/restores.
+- **nginx** page `/projects/<slug>/nginx` — live status, the generated server
+  block with a **drift badge**, and **one-click apply** (write → `nginx -t` →
+  reload) or the equivalent copy-paste commands.
+- **Container logs** `/projects/<slug>/logs` — live `docker compose logs` for
+  the deployed stack, with a service picker, word-wrap toggle, and a clear
   button (see below).
-- Archive/unarchive (archived projects reject webhooks).
-- **Delete** — a hard delete that removes the project and **all** its Docker
-  resources (containers, images, networks), run history, workspace and nginx
-  config. Type the slug to confirm; blocked while a run is in flight.
+- **Archive / Unarchive** (Settings) — archived projects reject webhooks.
+- **Delete** (Settings → Danger zone) — a hard delete that removes the project
+  and **all** its Docker resources (containers, images, networks), run history,
+  workspace and nginx config. Type the slug to confirm; blocked while a run is
+  in flight.
 
 ## Run detail `/runs/<id>`
 
@@ -199,6 +232,32 @@ Host-level controls in one place:
 All three apply through the same safe path as the project nginx page
 (write → `nginx -t` → reload, rolled back on a failed test).
 
+## Firewall `/firewall`
+
+A simple front end for the host's **UFW** firewall — no command line needed.
+
+- **Status** — shows whether the firewall is **active** or **inactive**, with an
+  **Enable** or **Disable** button. Turning it on first allows port **22 (SSH)**
+  and the panel's own port, so you don't lock yourself out. A **Reload** button
+  re-reads the rules.
+- **Rules** — a numbered list of the current rules. Each row has a **Delete**
+  button.
+- **Add rule** — pick an **action** (Allow / Deny / Reject), a **protocol**
+  (TCP / UDP / Any), a **port** (e.g. `80`, or a range like `1000:2000`), and an
+  optional **source** (e.g. `10.0.0.0/8`; blank means anywhere). Click **Add
+  rule**.
+
+> **What this means.** UFW (Uncomplicated Firewall) decides which network
+> connections the server accepts. "Allow port 80" lets web traffic in; a "Deny"
+> rule blocks it. Rule numbers shift after each delete, so the list is re-read
+> from the firewall every time the page loads.
+
+> **Common problems and fixes.** *Locked out after enabling?* The panel always
+> allows SSH (22) and its own port first, so you should stay connected — reach
+> the box over SSH and run `sudo ufw status` to check. *Rule didn't apply?* The
+> agent needs its firewall sudo rule; on a package install this is set up for
+> you (see [Security](./security.md)).
+
 ## Storage `/storage`
 
 A read-only storage report on top, then disk cleanup actions.
@@ -211,6 +270,10 @@ A read-only storage report on top, then disk cleanup actions.
   unprivileged agent can't attribute (OS packages, apt cache, system logs)
 - a breakdown of the agent's own data dir (database, run snapshots, backups,
   workspaces, uploads)
+- an interactive **Disk explorer** donut — click a slice to drill into a folder
+  and see what's using space; use the breadcrumb to climb back out. At the top
+  of a filesystem the chart fills the whole disk (used folders + free space +
+  any space the agent can't read)
 
 **Cleanup** — each section shows what it removes, an estimate of how much it
 will free, the items affected, and a single button:
@@ -281,24 +344,57 @@ changes, token rotations, triggers, cancellations, prunes, settings changes.
   vars also need the matching `secret.key`.
 - **Run housekeeping now** — triggers the nightly pass on demand.
 
-## GitHub tokens `/github`
+## Git credentials `/git-credentials`
 
-Register one GitHub personal access token per username (the repository owner).
-When a project clones `https://github.com/<username>/…`, the token registered
-for that username authenticates the clone. Tokens are encrypted at rest with
-`secret_key_file` and never shown again — re-submitting a username replaces its
-token. Delete a token to revoke access. Add the token once here instead of
-per project; it covers every private repo owned by that account.
+Store login details for cloning **private repositories**, once per git host —
+not per project. There are two shapes:
+
+- **GitHub** — set **Host** to `github.com`, the repo **Owner** (the account or
+  org that owns the repo), and a **personal access token** with `repo` read
+  access as the secret. When a project clones
+  `https://github.com/<owner>/…`, the matching credential authenticates it
+  automatically.
+- **Other git hosts** — set **Host** to your server (e.g. `git.example.lan`),
+  the account **Username**, and its **password or token** as the secret.
+
+Fill the form (**Host**, optional **Owner**, optional **Username**, **Secret**)
+and click **Save credential**. Secrets are **encrypted at rest** with
+`secret_key_file` and **never shown again** — the table shows only "••••• set".
+Delete a credential to revoke access.
+
+> **What this means.** A *credential* is just a saved username + secret for one
+> git host. You add it here once, and every project that clones from that host
+> uses it — you never paste tokens into individual projects.
 
 ## Settings `/settings`
 
-Change the admin password and toggle nightly auto-prune. Set a global
-**Default subdomain** base domain here — every project then becomes reachable at
-`<slug>.<base>` (a wildcard cert for the zone, if present, auto-enables HTTPS);
-blank disables it. This page also
-shows your **two-factor status** — whether 2FA is on and how many backup
-codes you have left — and lets you **regenerate backup codes** or **change
-the 2FA secret** (which makes you scan a new QR code). Operational knobs
-(concurrency, timeouts, retention, pull policy…) are shown read-only — they
-live in `/etc/ci-agent/config.toml`, the single source of truth; edit the
-file and restart the service to change them.
+The Settings page collects everything you change from the UI:
+
+- **Change password** — current password, new password (8+ characters),
+  confirm; click **Update password**.
+- **Two-factor authentication** — shows whether 2FA is on and how many backup
+  codes you have left. You can **Regenerate backup codes** or **Set up a new
+  device** (this shows a fresh QR code to scan). Both ask for your password
+  first.
+- **Maintenance** — a checkbox to turn on **nightly auto-prune** of dangling
+  images and build cache.
+- **Default subdomain** — set a global **base domain** here; every project then
+  becomes reachable at `<slug>.<base>` (a wildcard cert for the zone, if
+  present, auto-enables HTTPS). Blank disables it. See
+  [Domains & TLS](./domains.md).
+- **Failed-deployment email alerts** — send an email whenever a deploy fails.
+  Fill in the **admin email**, **SMTP host** and **port**, the **security** mode
+  (*STARTTLS (587)*, *Implicit TLS (465)*, or *None (25)*), optional **username**
+  and **password**, and a **From** address. Click **Save**, or **Save & send
+  test** to fire a test email right away. When a real deploy fails, the agent
+  emails both the admin and the commit's committer. See
+  [Operations](./operations.md).
+- **Effective configuration** — the operational knobs (concurrency, timeouts,
+  retention, pull policy…) shown **read-only**. They live in
+  `/etc/ci-agent/config.toml`, the single source of truth; edit the file and
+  restart the service to change them.
+
+> **What this means.** *SMTP* is the standard way programs send email. You point
+> the agent at a mail server (your own internal relay, or any SMTP server it can
+> reach) and it sends through that. On an air-gapped network, use an internal
+> relay; choose **None (25)** only on a trusted LAN.

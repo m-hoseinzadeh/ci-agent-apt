@@ -35,13 +35,16 @@ zip_url_allowlist = []
 | `secret_key_file` | 32-byte key for env-var encryption; auto-generated `0600` on first start |
 | `zip_url_allowlist` | URL prefixes allowed for ZIP-URL fetches; empty = allow all (air-gapped default) |
 
-GitHub personal access tokens for cloning private repos are **not** configured
-here — register one token per GitHub username on the **GitHub tokens** page in
-the UI (encrypted at rest with `secret_key_file`). See [Projects](./projects.md).
+Credentials for cloning private repos are **not** configured here — register
+them on the **Git credentials** page in the UI (encrypted at rest with
+`secret_key_file`). See [Projects](./projects.md).
 
 Domains, certificates and the Let's Encrypt account (email + staging) are
 likewise managed in the UI, not in `config.toml` — see
 [Domains & TLS](./domains.md).
+
+Failed-deployment **email alerts** (SMTP host, port, credentials) are also set
+in the UI, on the Settings page — see [Operations](./operations.md).
 
 ## Environment overrides
 

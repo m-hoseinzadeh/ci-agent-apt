@@ -72,6 +72,23 @@ Exit status and output are logged; the hook can send mail through an
 internal relay, post to a chat server, run `wall` — whatever exists on your
 network.
 
+## Email alerts on failed deployments
+
+For email specifically, you don't need a hook — the agent has built-in SMTP.
+On the **Settings** page, fill in **Failed-deployment email alerts**: the admin
+email, the SMTP host and port, the security mode (STARTTLS / implicit TLS /
+none), optional username and password, and a From address. Use **Save & send
+test** to confirm it works.
+
+When a real deploy fails, the agent emails **both the admin and the commit's
+committer** (when a committer email is known). Sending is fire-and-forget: it
+never blocks or fails the run, and errors are logged. This runs in addition to
+`notify_hook` if you set both. See the [Admin UI guide](./ui.md) for the form.
+
+> **What this means.** *SMTP* is the standard email-sending protocol. Point the
+> agent at any mail server it can reach — an internal relay on an air-gapped
+> network, or a normal SMTP server elsewhere.
+
 ## Backup & restore
 
 Back up `data_dir` (DB + `backups/` + `runs/` snapshots) and the

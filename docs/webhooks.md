@@ -33,19 +33,23 @@ branch is read from `ref: "refs/heads/..."`, the commit from
 `after`/`checkout_sha`, the repo URL from `repository.*` — anything missing
 falls back to the project's configuration. Unknown fields are ignored.
 
+After first-run setup the agent listens only on `127.0.0.1`, so call webhooks
+through your **admin domain** (the same nginx site that serves the panel), not
+the raw `:8044` port:
+
 ```bash
 # simplest: deploy the configured repo/branch
-curl -X POST http://ci-host:8044/hooks/my-app/<token>/git
+curl -X POST https://ci.example.internal/hooks/my-app/<token>/git
 
 # specific branch
-curl -X POST http://ci-host:8044/hooks/my-app/<token>/git \
+curl -X POST https://ci.example.internal/hooks/my-app/<token>/git \
   -H 'content-type: application/json' -d '{"branch":"release"}'
 ```
 
 ## ZIP endpoint
 
 ```bash
-curl -X POST http://ci-host:8044/hooks/my-app/<token>/zip \
+curl -X POST https://ci.example.internal/hooks/my-app/<token>/zip \
   -H 'content-type: application/json' \
   -d '{"zip_url":"http://artifacts.internal/app-1.2.3.zip"}'
 ```
@@ -60,6 +64,7 @@ optional `zip_url_allowlist` restricts which hosts may be fetched.
 |---|---|
 | `202` | accepted; body `{"run_id": N}` |
 | `404` | unknown project **or** bad token (indistinguishable on purpose) |
+| `413` | request body too large (the webhook body cap is 1 MiB) |
 | `422` | body present but unusable (bad JSON, missing `zip_url`, no git URL anywhere) |
 
 ## Queue behavior
