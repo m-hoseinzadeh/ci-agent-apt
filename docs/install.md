@@ -154,18 +154,23 @@ reachable at `http://<server-ip>:8044` right after install (the built-in
 default without a config file stays `127.0.0.1:8044`). The wizard enforces,
 in order:
 
-1. **Set the admin password** — do this immediately; until you do, anyone
+1. **Name your server** *(optional)* — give this install a name and, if you
+   like, a logo (PNG / SVG / JPEG / WebP / GIF / ICO, up to 512 KB). They brand
+   the panel — sidebar, browser tab title and favicon. Leave both blank to use
+   the default; you can change them later on the Settings page. Click
+   **Continue**.
+2. **Set the admin password** — do this immediately; until you do, anyone
    who can reach the port can claim the instance.
-2. **Bind a domain** for the admin panel — a LAN DNS name or `/etc/hosts`
+3. **Bind a domain** for the admin panel — a LAN DNS name or `/etc/hosts`
    entry (e.g. `ci.example.internal`) works on air-gapped networks.
-3. **Install the generated nginx site** — copy-paste commands; the agent
+4. **Install the generated nginx site** — copy-paste commands; the agent
    never touches nginx itself.
-4. **Open `http://<your-domain>/`** — when the first request arrives through
+5. **Open `http://<your-domain>/`** — when the first request arrives through
    nginx (Host matches, peer is loopback, `X-Forwarded-For` present), the
    agent rewrites `listen` to `127.0.0.1:8044` in its config and restarts.
    From then on the panel is unreachable from outside the server except
    through nginx; the rest of the UI stays locked until this completes.
-5. **Set up two-factor authentication (2FA)** — on your first login the panel
+6. **Set up two-factor authentication (2FA)** — on your first login the panel
    shows a QR code. Scan it with an authenticator app (e.g. Google
    Authenticator) and enter the 6-digit code to finish. **Save the 10 backup
    codes** it shows — each one logs you in once if you lose your phone. 2FA is

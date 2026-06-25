@@ -26,7 +26,7 @@ Body is optional JSON:
 |---|---|
 | `git_url` | override the project's configured repo for this run |
 | `branch` | override the configured branch |
-| `commit` | build an exact commit (fetched on top of the shallow clone) |
+| `commit` | build an exact commit (fetched on top of the shallow clone); if it can't be fetched or checked out, the run **fails** rather than deploying branch `HEAD` |
 
 Plain **GitHub / GitLab / Gitea push payloads are accepted as-is**: the
 branch is read from `ref: "refs/heads/..."`, the commit from

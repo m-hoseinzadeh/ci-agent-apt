@@ -8,9 +8,11 @@ There is **one admin user**. Login is in two steps:
 2. **Two-factor code (2FA)** — a 6-digit code from an authenticator app
    (Google Authenticator, and any app that follows the same standard).
 
-After a successful login you get an HttpOnly `SameSite=Lax` session cookie.
-Logins are rate-limited (5 tries per minute). Every action that changes
-something is CSRF-protected and written to the audit log.
+After a successful login you get an HttpOnly `SameSite=Lax` session cookie
+(also flagged `Secure` when you reached the panel over HTTPS). Logins are
+rate-limited **per client IP** (5 tries a minute, with a global backstop).
+Changing the admin password **signs out all other sessions**. Every action that
+changes something is CSRF-protected and written to the audit log.
 
 > **What is 2FA?** "Two-factor" means you need two things to log in:
 > something you *know* (the password) and something you *have* (your phone
@@ -27,7 +29,8 @@ something is CSRF-protected and written to the audit log.
 - **Standard settings** (cannot be changed): SHA1, 6 digits, a new code
   every 30 seconds. The agent accepts the code from the step before and
   after the current one, so a small clock difference between phone and
-  server is fine.
+  server is fine. A code that was **already used** is rejected, so a
+  captured code can't be replayed while it's still valid.
 - **Backup codes.** When you enable 2FA the agent shows **10 one-time backup
   codes**. Save them somewhere safe — each one logs you in once if you lose
   your phone.
@@ -96,8 +99,13 @@ server {
   repos you don't trust.
 - ZIP-URL fetches default to allow-all (`zip_url_allowlist = []`) because
   on an air-gapped network internal hosts are the point. On a connected
-  network, set the allowlist.
-- One global login rate limit (not per-IP) — single-admin tool.
+  network, set the allowlist. Either way, git and ZIP fetches are blocked
+  from reaching **loopback / link-local** addresses (e.g. `127.0.0.1`,
+  `169.254.*`, `::1`), so a supplied URL can't be pointed back at the host
+  itself; private LAN ranges stay reachable on purpose.
+- A webhook that **pins an exact commit** must be able to fetch and check that
+  commit out — if it can't, the run **fails** rather than quietly deploying
+  branch `HEAD` instead.
 
 ## Managing nginx and TLS
 

@@ -32,9 +32,17 @@ the `recreate` strategy is an accepted trade-off on small servers.
 
 Every successful run snapshots its exact compose file + the generated
 override (pinned image tags) under `runs/<id>/`. *Redeploy* re-runs `up -d`
-from that snapshot — no fetch, no build. It works as long as the run's
-images still exist, which the cleanup tooling guarantees for the last
-`redeployable_runs_per_project` successful runs of each project.
+from that snapshot — no fetch, no build — after first **pulling the latest
+image** for any registry-backed service (a failed pull is ignored on an
+air-gapped box). It works as long as the run's images still exist, which the
+cleanup tooling guarantees for the last `redeployable_runs_per_project`
+successful runs of each project.
+
+*Recreate* (on the project's Containers card) is related but different: it
+rebuilds the containers from the last successful snapshot using the project's
+**current env vars and volumes**, so it's how you apply env/volume edits without
+a full rebuild. The agent also recreates automatically when you save changed env
+vars or volumes.
 
 ## Queueing
 

@@ -12,7 +12,7 @@ Pick one when you create the project:
 |---|---|---|
 | **Compose** (default) | git repo or ZIP | the repo's `docker-compose.yml` (path configurable) |
 | **Dockerfile** | git repo or ZIP | a single service built from a `Dockerfile`; the agent synthesizes a one-service compose file around it, publishing `container_port` on the registered HTTP port |
-| **Image** | none | a prebuilt image you name directly (e.g. `mariadb:11`), with optional named volumes; no fetch, no build |
+| **Image** | none | a prebuilt image you name directly (e.g. `mariadb:11`), with optional volumes; no fetch, no build |
 | **Inline compose** | none | a `docker-compose.yml` you paste into the UI; no fetch, no build |
 
 **Compose** and **Dockerfile** are *source* modes: they fetch from git or a
@@ -146,25 +146,34 @@ URL. See [Domains & TLS](./domains.md).
 
 ## Categories & networking
 
-Each project has an optional **category**. Projects in the **same category**
-share one private Docker network and can reach each other by **service name**
-(handy when an app needs to talk to a database you run as a separate project).
-Projects in **different** categories are network-isolated and cannot see each
-other.
+Each project can have **one or more categories**. A category is a private Docker
+network: the project joins the network of **every** category it lists, and any
+two projects that share **at least one** category can reach each other by
+**hostname** (handy when an app needs to talk to a database you run as a
+separate project). Projects with **no category in common** are network-isolated
+and cannot see each other.
 
-- Leave the category **blank** to use the shared `default` category.
-- Changing a project's category moves it to the new network on its **next
-  deploy**.
+- Enter categories on the create or Settings form as a comma-separated list
+  (each becomes a removable chip). Lowercase letters, digits and dashes.
+- Leave it **blank** to use the shared `default` category. Add `default`
+  alongside named categories to stay on the shared network *and* a private one.
+- Each category maps to a network named `ci-agent-shared-<category>`; the
+  built-in `default` category maps to `ci-agent-shared`.
+- Within a network a project is reachable at its **slug** (or `<slug>-<service>`
+  for a multi-service stack).
+- Changing a project's category list **re-homes its running stack immediately**
+  on save — no redeploy needed.
 
 > **What this means.** A *Docker network* is a private network that only the
-> containers on it can use. Putting two projects in the same category is how you
+> containers on it can use. Giving two projects a category in common is how you
 > let them connect — for example, a web app in category `shop` can reach a
-> database also in category `shop` at `db:5432`, with nothing exposed to the
-> outside.
+> database also in category `shop`, with nothing exposed to the outside.
 
 > **Example.** Run Postgres as one project and your web app as another, both in
-> category `shop`. The web app connects to the database at its service hostname
-> over the shared network — you never publish the database port to the host.
+> category `shop`. The web app connects to the database at its hostname over the
+> shared network — you never publish the database port to the host. Put a shared
+> cache in categories `shop, blog` and both apps can reach it while staying
+> isolated from each other.
 
 ## Tests (optional)
 
@@ -198,6 +207,11 @@ bind mounts into the source tree will not survive.
 > when the container is rebuilt. A *bind mount* into the cloned source
 > (e.g. `./data:/data`) does **not** survive, because the clone is deleted
 > after each run.
+
+For **Image** and **Dockerfile** projects (which have no compose file you
+write), attach storage from the UI instead: the **Volumes** card on the
+project's Settings tab adds a named volume or a host-path bind mount. See the
+[Admin UI guide](./ui.md).
 
 ## Git access
 

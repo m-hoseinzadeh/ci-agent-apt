@@ -18,12 +18,29 @@ ever lose your phone.
 > `ci-agent reset-2fa` on the server to clear 2FA and enroll again. See
 > [Security](./security.md) for the full 2FA model.
 
+## Branding (server name & logo)
+
+You can give this install its own **name** and **logo**. Both are optional.
+
+- Set them during first-run setup (the **"Name your server"** step) or later on
+  the **[Settings](./ui.md)** page under **Branding**.
+- The name shows at the top of the sidebar and in the browser tab title; the
+  logo replaces the default mark in the sidebar and is used as the browser
+  **favicon** (and on the login page).
+- A logo can be a **PNG, SVG, JPEG, WebP, GIF or ICO** file, up to **512 KB**.
+- Leave the name blank to use the default **"CI Agent"**; tick **Remove current
+  logo** in Settings to drop a logo and go back to the default mark.
+
+> **What this means.** Branding is cosmetic and per-install (stored on the
+> server, so everyone who logs in sees it). It does not change how anything
+> works — it just makes one box easy to tell apart from another.
+
 ## Themes
 
 A **theme picker** sits at the bottom of the sidebar. Click it to open a list of
 **16 themes**, grouped into **Dark** (8) and **Light** (8), each with a small
-colour swatch and its own font. Examples: *Dark · slate* (the default),
-*Ocean · azure*, *Crimson · red*, *Light · gray*, *Rose · blush*.
+colour swatch. Examples: *Dark · slate* (the default), *Ocean*, *Crimson*,
+*Light*, *Rose*.
 
 Pick one and the whole panel changes instantly. Your choice is remembered in the
 browser (`localStorage`) and applied before the page draws, so there's no flash
@@ -42,13 +59,36 @@ open or closed is remembered per-browser. Press `Esc` to close it.
 
 ## Dashboard `/`
 
-Live server gauges (CPU, memory, per-disk usage, load, 10-minute
-sparklines), active and queued runs, and the most recent run history.
-Refreshes every few seconds.
+The home page, refreshed every few seconds. It shows:
+
+- a **System** card — gauges for CPU, memory and each disk, plus a meta-line
+  with **Load (1m)** and how many runs are **queued**;
+- two **last-10-minute sparklines** (CPU and memory) that link to the full
+  **[Resources](./ui.md)** page;
+- an **Active runs** table (what's running right now); and
+- a **Recent runs** table (the latest deploy history).
+
+## Resources `/metrics`
+
+A detailed, live view of how busy the server is — open it from the sidebar or
+by clicking a dashboard sparkline. It covers the **last 10 minutes** and shows:
+
+- **CPU** — overall usage with a line chart, plus a small **per-core** grid.
+- **Memory** — used / total, available, and swap usage.
+- **Load average (1m)**.
+- **Disks** — a usage meter for every filesystem.
+- **Containers** — a table of every running container with **CPU**, **Memory**,
+  **Mem %**, **Net I/O**, **Block I/O** and **PIDs**. Click a column heading to
+  **sort** by it.
+- **Host processes** — the top processes by memory (container processes
+  excluded), with **PID**, **Process**, **CPU** and **Memory**. Also sortable.
+
+## Projects `/projects`
 
 The **Projects** list shows every project with a live **health badge** (see
-[Operations](./operations.md) for what the badge means) and its category. Two
-buttons sit at the top:
+[Operations](./operations.md) for what the badge means) and its categories. A
+**category filter** at the top narrows the list to one category (your last
+choice is remembered in the browser). Two buttons sit at the top:
 
 - **New project** — opens the create form.
 - **Browse app catalog** — install a ready-made app instead of writing compose
@@ -56,18 +96,22 @@ buttons sit at the top:
 
 ### Creating a project
 
-A project is: **name**, **slug** (lowercase, immutable after creation), an
-optional **category** (see below), a [deploy mode](./projects.md) and its source
-(git URL + branch, a Dockerfile path, a prebuilt image, or pasted compose),
-**HTTP port**, **env vars** (encrypted at rest; shown in **cleartext** in the
-form so you can inspect and edit them — the admin is the sole operator of their
-own box), an optional **working directory** (for monorepos) and a **run
+A project is: **name**, **slug** (lowercase, immutable after creation), one or
+more optional **categories** (see below), a [deploy mode](./projects.md) and its
+source (git URL + branch, a Dockerfile path, a prebuilt image, or pasted
+compose), **HTTP port**, **env vars** (encrypted at rest; shown in **cleartext**
+in the form so you can inspect and edit them — the admin is the sole operator of
+their own box), an optional **working directory** (for monorepos) and a **run
 timeout**. The button is **Create project**.
 
-> **What is a category?** Projects in the **same category** share one private
-> Docker network and can reach each other by hostname. Projects in **different**
-> categories are network-isolated. Leave it blank for the shared `default`
-> category. Changing it moves the project to another network on its next deploy.
+> **What is a category?** A category is a private Docker network. Type **one or
+> more** categories (separated by commas — each becomes a removable chip); the
+> project joins **every** network you list and can reach, and be reached by, any
+> project that shares **at least one** of those networks by hostname. Projects
+> with no category in common are isolated from each other. Leave it blank for
+> the shared `default` category. Typing a brand-new category shows a small
+> warning so you can catch typos. Changing the list **re-homes the running stack
+> immediately** — no redeploy needed. See [Project conventions](./projects.md).
 
 Private clones authenticate with a credential you register on the
 **Git credentials** page (see below).
@@ -78,15 +122,17 @@ Open a project and you get four tabs:
 
 - **Overview** — the **Health** card (a roll-up of the running stack's state),
   the project's **webhook URLs** with a *Rotate token* button (source modes
-  only), a **Trigger a run** card, and a **Network** card showing the category
-  and any sibling projects on the same network.
+  only), a **Trigger a run** card, and a **Network** card showing the project's
+  categories, the Docker networks it shares, and any sibling projects on those
+  networks.
 - **Domains & Ports** — the ports table (add extra ports, each with its own
   slug and default URL), the domains for each port, the *Default URL* toggle,
   and **per-port nginx proxy tuning** (see [Domains & TLS](./domains.md)).
 - **Deployments** — the **Run history** table and the **Containers** card.
-- **Settings** — the edit form (name, category, git, branch, mode, paths,
-  ports, run timeout, env vars), **Archive / Unarchive**, and the **Danger
-  zone** (delete).
+- **Settings** — the edit form (name, categories, git, branch, mode, paths,
+  ports, run timeout, env vars), a **Volumes** card on Image / Dockerfile
+  projects (see below), **Archive / Unarchive**, and the **Danger zone**
+  (delete).
 
 A fifth **Actions** tab appears only when the project has custom actions defined
 (see below). The panel remembers which tab you last used per project.
@@ -96,11 +142,26 @@ A fifth **Actions** tab appears only when the project has custom actions defined
 - **Trigger a run** (Overview) — run from the configured repo (with an optional
   URL/branch override), from a ZIP URL, or by uploading a ZIP file. Sourceless
   projects (Image / Inline compose) show a **Deploy now** button instead.
-- **Run history** (Deployments) — each row shows the run number, status, commit
-  message + committer, start time and duration. A failed run expands to show its
-  error.
-- **Redeploy** (Deployments) — re-run a past **successful** deploy with no
-  fetch or build. The button is greyed out once that run's images are pruned.
+- **Run history** (Deployments) — each row shows the **run number** (counted per
+  project from `#1`), status, commit message + committer, start time and
+  duration. A failed run expands to show its error.
+- **Redeploy** (Deployments) — re-run a past **successful** deploy with no fetch
+  or build. It first **pulls the latest image** for each registry-backed service
+  (on an air-gapped box a failed pull is ignored), then brings the stack up from
+  that run's saved snapshot. The button is greyed out once that run's images are
+  pruned.
+- **Recreate** (Deployments → Containers card) — rebuild the containers from the
+  last successful run's snapshot using the project's **current env vars and
+  config**. Use it to apply env or volume changes; a plain **Restart** keeps the
+  old values. (The agent also recreates automatically when you save changed env
+  vars or volumes.)
+- **Volumes** (Settings, Image / Dockerfile modes) — attach storage to the
+  container. Pick a type — a **Named volume** (Docker-managed, survives
+  redeploys) or a **Host path** (a bind mount to an absolute path on the server)
+  — then give the **source** (volume name or `/host/path`) and the **container
+  path**, and optionally mark it **read-only**. Host paths under system
+  directories (`/etc`, `/usr`, `/var/lib/docker`, …) are refused for safety; use
+  a location like `/opt`, `/srv` or `/mnt`. Saving a volume recreates the stack.
 - **Containers** (Deployments) — a table of the deployed stack's containers
   with per-container **Start / Stop / Restart / Pause** buttons. These act on
   the live containers, not on a redeploy.
@@ -122,19 +183,33 @@ A fifth **Actions** tab appears only when the project has custom actions defined
   workspace and nginx config. Type the slug to confirm; blocked while a run is
   in flight.
 
-## Run detail `/runs/<id>`
+## Run detail `/projects/<slug>/runs/<number>`
 
-Status timeline, source/commit/image metadata, and the **live log**: the
-full run log replays instantly, then streams in real time while the run is
-active. A `Cancel` button TERM→KILLs the run's process tree.
+Status timeline, source/commit/image metadata, and the **live log**: the full
+run log replays instantly, then streams in real time while the run is active. A
+`Cancel` button TERM→KILLs the run's process tree. The log viewer has the same
+controls described under [Container logs](./ui.md) below.
 
 ## Container logs `/projects/<slug>/logs`
 
 Live output of the project's **currently deployed** containers (distinct from
 run logs, which capture a build/deploy). Pick a single service or stream all of
-them, toggle word-wrap for long lines, and clear the view to watch only new
-output. The stream auto-sticks to the tail unless you scroll up to read
-scrollback.
+them. Both this page and the run log use the same viewer:
+
+- **Colour by level** — lines that look like errors, warnings, info or debug are
+  tinted, and any **ANSI colours** the program prints are shown too.
+- **Level filter** — chips for **Error / Warn / Info / Debug / Other**, each with
+  a count. Click one to hide or show that level.
+- **Search** — type to highlight matches; the **↑ / ↓** buttons (or
+  Enter / Shift+Enter) jump between them, with a `match / total` counter.
+- **Wrap** — toggle word-wrap for long lines.
+- **Clear** — empty the view to watch only new output.
+- **↓ Jump to latest** — appears when you scroll up; the view otherwise sticks
+  to the newest line on its own.
+
+Very large logs stay fast — the viewer only draws the lines on screen and, once
+a log gets huge, drops the oldest lines (shown as a "*… earlier lines dropped*"
+marker at the top).
 
 ## Terminals
 
@@ -231,6 +306,19 @@ Host-level controls in one place:
 
 All three apply through the same safe path as the project nginx page
 (write → `nginx -t` → reload, rolled back on a failed test).
+
+- **nginx configs** — an inventory of every `.conf` file in
+  `/etc/nginx/conf.d/`, with a status badge on each:
+  - **ours** — a project's vhost or a ci-agent-managed file (the admin panel,
+    the global snippet). Project rows link to that project's nginx page.
+  - **default** — nginx's stock site (`default.conf`), left untouched.
+  - **unmanaged** — a file not tied to any current project (a leftover from a
+    deleted project, or one ci-agent never wrote).
+
+  Each row shows the file name, owner, the hostnames it serves, size and last
+  modified. **Unmanaged** files have a **View** button to read the file and a
+  **Delete config** button to remove it; managed and default files can't be
+  deleted here, so you can't lock yourself out by accident.
 
 ## Firewall `/firewall`
 
@@ -370,8 +458,14 @@ Delete a credential to revoke access.
 
 The Settings page collects everything you change from the UI:
 
+- **Branding** — set this server's **name** (shown in the sidebar and the
+  browser tab) and an optional **logo** (used as the sidebar mark and the
+  favicon). Upload a PNG / SVG / JPEG / WebP / GIF / ICO up to 512 KB, or tick
+  **Remove current logo** to go back to the default mark; click **Save**. See
+  [Branding](./ui.md) above.
 - **Change password** — current password, new password (8+ characters),
-  confirm; click **Update password**.
+  confirm; click **Update password**. Changing it **signs out every other
+  session** (you stay logged in on this browser).
 - **Two-factor authentication** — shows whether 2FA is on and how many backup
   codes you have left. You can **Regenerate backup codes** or **Set up a new
   device** (this shows a fresh QR code to scan). Both ask for your password
