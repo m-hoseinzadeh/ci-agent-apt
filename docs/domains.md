@@ -24,18 +24,40 @@ services in the same project.
 Use **Rename** to change a hostname, **Manage** / **Add SSL** to handle its
 certificate, and the **×** button to remove it.
 
-## Default subdomain (`<slug>.<base>`)
+## Default URLs: subdomain and path
 
-Set a global **base domain** under **Settings → Default subdomain** and every
-project automatically gets a `<slug>.<base>` hostname (e.g. project `blog` with
-base `example.lan` → `blog.example.lan`) — no per-project typing. Each project
-page shows the generated host with its own **enable** toggle (on by default);
-unchecking it stops serving the project there. If a **wildcard certificate**
-for the zone exists, the default subdomain is served over HTTPS automatically;
-otherwise it stays plain HTTP. Leaving the base domain blank disables the
-feature for all projects. Explicitly-added domains keep working alongside it.
+Set a global **base domain** under **Settings → Default subdomain**. With one
+set, each project **port** can be reached automatically in two independent ways,
+toggled per port in the **Default URL** column of the **Ports** card:
 
-## Ports and default URLs
+- **Subdomain** — `<slug>.<base>` (e.g. project `blog` with base `example.lan`
+  → `blog.example.lan`). **On by default.**
+- **Path** — `<base>/<slug>/` (e.g. `example.lan/blog/`). **Off by default.**
+
+The primary port's segment is the project slug; each extra port uses its own
+port slug. Tick either box — or both — per port; each change is applied to nginx
+immediately. If a **wildcard certificate** for the zone exists, both forms are
+served over HTTPS automatically; otherwise they stay plain HTTP. Leaving the base
+domain blank disables default URLs for every project. Explicitly-added domains
+keep working alongside them.
+
+### Choosing subdomain vs path
+
+- **Subdomain** gives each app its **own origin**, so the browser isolates
+  cookies, `localStorage`, and CORS between projects. This is the safer default.
+- **Path** puts the app on the **shared apex origin** (`<base>`), so every
+  path-routed app shares one cookie jar and `localStorage`. Use it when you want
+  a single hostname, but know that path-routed apps can see each other's
+  browser-stored data — which is why it is opt-in per port.
+- Path routing **strips the `/<slug>` prefix** before forwarding and sends an
+  `X-Forwarded-Prefix` header. An app works under a path only if it uses
+  **relative URLs** or supports a configurable base path; apps that hardcode `/`
+  for assets or redirects will break. Subdomain mode has no such constraint.
+- Each path segment must be **unique across all projects** (the apex path
+  namespace is shared) — enabling one that another project already claims is
+  refused.
+
+## Ports
 
 A project always has one **primary HTTP port**. You can add **extra ports** on
 the **Domains & Ports** tab — useful when one project exposes more than one
@@ -43,13 +65,10 @@ service (for example an app on one port and its metrics on another).
 
 Each port gets:
 
-- its own **slug** (a short DNS-safe name) and a **default URL**
-  `<port-slug>.<base>` when a base domain is set (see below);
+- its own **slug** (a short DNS-safe name) that names both of its default URLs
+  (the `<slug>.<base>` subdomain and the `<base>/<slug>/` path — see above);
 - its own **domains** (the host port they proxy to); and
 - its own **proxy tuning** (the next section).
-
-A project-wide **Default URL** toggle turns the auto-generated `<slug>.<base>`
-URLs on or off for every port at once.
 
 ## Per-port nginx tuning
 

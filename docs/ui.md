@@ -126,8 +126,9 @@ Open a project and you get four tabs:
   categories, the Docker networks it shares, and any sibling projects on those
   networks.
 - **Domains & Ports** — the ports table (add extra ports, each with its own
-  slug and default URL), the domains for each port, the *Default URL* toggle,
-  and **per-port nginx proxy tuning** (see [Domains & TLS](./domains.md)).
+  slug and per-port *Subdomain* / *Path* default-URL toggles), the domains for
+  each port, and **per-port nginx proxy tuning** (see
+  [Domains & TLS](./domains.md)).
 - **Deployments** — the **Run history** table and the **Containers** card.
 - **Settings** — the edit form (name, categories, git, branch, mode, paths,
   ports, run timeout, env vars), a **Volumes** card on Image / Dockerfile
@@ -472,9 +473,11 @@ The Settings page collects everything you change from the UI:
   first.
 - **Maintenance** — a checkbox to turn on **nightly auto-prune** of dangling
   images and build cache.
-- **Default subdomain** — set a global **base domain** here; every project then
-  becomes reachable at `<slug>.<base>` (a wildcard cert for the zone, if
-  present, auto-enables HTTPS). Blank disables it. See
+- **Default subdomain** — set a global **base domain** here; each project port
+  can then be reached at `<slug>.<base>` (a subdomain, on by default) and/or
+  `<base>/<slug>/` (an apex path, off by default), toggled per port on the
+  project's **Domains & Ports** tab. A wildcard cert for the zone, if present,
+  auto-enables HTTPS for both. Blank disables them. See
   [Domains & TLS](./domains.md).
 - **Failed-deployment email alerts** — send an email whenever a deploy fails.
   Fill in the **admin email**, **SMTP host** and **port**, the **security** mode
