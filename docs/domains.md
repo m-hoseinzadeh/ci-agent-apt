@@ -67,6 +67,49 @@ unaffected), so the apex root and other paths on the host stay free — handy wh
 ci-agent shares the hostname with something else or sits behind another front
 proxy that routes only `/p/*` to it. Blank serves path routes at the root.
 
+### Single-domain mode: panel and projects on one host
+
+You can run **everything on one domain** — the admin panel at the root and your
+projects on paths under it. Set the **base domain** (Settings → Default
+subdomain) to the **same hostname your admin panel uses**. ci-agent then serves:
+
+- the **admin panel** at `https://<domain>/`, and
+- each path-enabled project at `https://<domain>/<base-path>/<slug>/`.
+
+**What this means:** one hostname, one certificate, no extra DNS records. Good
+for a small box where you do not want a separate domain per app.
+
+**You must set a base path first.** Because the panel lives at the root, projects
+need a prefix so their URLs cannot clash with the panel's own pages. Set a **base
+path** (e.g. `/p`) under Settings → Default subdomain **before** turning on Path
+for any project. If you try to expose a project on a path without a base path,
+ci-agent refuses and tells you to set one first.
+
+**How to turn it on:**
+
+1. In **Settings → Default subdomain**, set **Base path** to `/p` (or any prefix
+   you like) and save.
+2. In the same place, set **Base domain** to your admin panel's hostname and save.
+3. On a project's **Domains & Ports** tab, tick **Path** for the port you want to
+   publish.
+
+The project is now at `https://<domain>/p/<slug>/`, and the panel stays at
+`https://<domain>/`.
+
+**No manual nginx work.** ci-agent folds the project path routes into the admin
+panel's own nginx config (a single server block for the shared host), so the two
+never collide. Toggling Path on a project updates it automatically.
+
+**HTTPS** works on the shared domain as soon as a certificate covers it — a
+wildcard for the zone or a single-host cert named exactly for the domain. Without
+one, the shared domain stays plain HTTP.
+
+> **Note — Advanced (raw) admin config.** If you use the **Advanced — edit the
+> full config** override for the admin panel on the **Host** page, ci-agent
+> cannot fold path routes into your hand-written block, so **path routing is
+> turned off** while a raw override is set. Remove the raw override to use
+> single-domain mode, or give each project its own subdomain instead.
+
 ## Ports
 
 A project always has one **primary HTTP port**. You can add **extra ports** on
