@@ -476,9 +476,10 @@ The Settings page collects everything you change from the UI:
 - **Default subdomain** — set a global **base domain** here; each project port
   can then be reached at `<slug>.<base>` (a subdomain, on by default) and/or
   `<base>/<slug>/` (an apex path, off by default), toggled per port on the
-  project's **Domains & Ports** tab. A wildcard cert for the zone, if present,
-  auto-enables HTTPS for both. Blank disables them. See
-  [Domains & TLS](./domains.md).
+  project's **Domains & Ports** tab. An optional **base path** here nests every
+  path route under a shared prefix (e.g. `/p` → `<base>/p/<slug>/`). A wildcard
+  cert for the zone, if present, auto-enables HTTPS for both. Blank disables them.
+  See [Domains & TLS](./domains.md).
 - **Failed-deployment email alerts** — send an email whenever a deploy fails.
   Fill in the **admin email**, **SMTP host** and **port**, the **security** mode
   (*STARTTLS (587)*, *Implicit TLS (465)*, or *None (25)*), optional **username**

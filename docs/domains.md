@@ -57,6 +57,16 @@ keep working alongside them.
   namespace is shared) — enabling one that another project already claims is
   refused.
 
+### Optional base path prefix
+
+By default path routes sit at the apex root (`<base>/<slug>/`). Set an optional
+**base path** under **Settings → Default subdomain** to nest them all under a
+shared prefix instead — e.g. `/p` makes project `a-b` reachable at
+`<base>/p/a-b/`. It applies globally to every path route (subdomains are
+unaffected), so the apex root and other paths on the host stay free — handy when
+ci-agent shares the hostname with something else or sits behind another front
+proxy that routes only `/p/*` to it. Blank serves path routes at the root.
+
 ## Ports
 
 A project always has one **primary HTTP port**. You can add **extra ports** on
