@@ -159,8 +159,10 @@ and cannot see each other.
   alongside named categories to stay on the shared network *and* a private one.
 - Each category maps to a network named `ci-agent-shared-<category>`; the
   built-in `default` category maps to `ci-agent-shared`.
-- Within a network a project is reachable at its **slug** (or `<slug>-<service>`
-  for a multi-service stack).
+- Within a network a project is reachable at `ci-agent--<slug>` (single-service
+  apps) or `ci-agent--<slug>-<service>` (one per service in a multi-service
+  stack). The project's own hostnames are shown on its **Overview** tab under
+  **Internal access**.
 - Changing a project's category list **re-homes its running stack immediately**
   on save — no redeploy needed.
 
