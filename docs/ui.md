@@ -62,7 +62,9 @@ open or closed is remembered per-browser. Press `Esc` to close it.
 The home page, refreshed every few seconds. It shows:
 
 - a **System** card — gauges for CPU, memory and each disk, plus a meta-line
-  with **Load (1m)** and how many runs are **queued**;
+  with **Load (1m)** and how many runs are **queued**. If the server has an
+  **NVIDIA GPU**, extra gauges show its utilization (with temperature) and
+  video memory;
 - two **last-10-minute sparklines** (CPU and memory) that link to the full
   **[Resources](./ui.md)** page;
 - an **Active runs** table (what's running right now); and
@@ -74,6 +76,9 @@ A detailed, live view of how busy the server is — open it from the sidebar or
 by clicking a dashboard sparkline. It covers the **last 10 minutes** and shows:
 
 - **CPU** — overall usage with a line chart, plus a small **per-core** grid.
+- **GPU** — one card per **NVIDIA GPU** (only shown when present), with a
+  utilization line chart, current temperature and video-memory usage. Detected
+  through `nvidia-smi`; other vendors aren't shown yet.
 - **Memory** — used / total, available, and swap usage.
 - **Load average (1m)**.
 - **Disks** — a usage meter for every filesystem.
