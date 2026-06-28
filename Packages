@@ -1,23 +1,4 @@
 Package: ci-agent
-Version: 0.2.2-r157
-Architecture: amd64
-Maintainer: Mohammad Hoseinzadeh <hoseinzadeh.ashraf@gmail.com>
-Installed-Size: 14860
-Depends: adduser, curl, git
-Recommends: docker.io | docker-ce, nginx, tmux, openssh-server, openssh-client
-Filename: pool/ci-agent_0.2.2-r157_amd64.deb
-Size: 4592848
-MD5sum: 8ae3365c3e41f714a10b748ae404b5af
-SHA1: 6bf1775166b5610504fbb60ac6d0a8eb4ce8bcb3
-SHA256: 1950116fd8b738c336f9ae7dd7ced0686d9e11aae3c16be76e933cfc551b8cad
-Section: admin
-Priority: optional
-Description: Single-binary CI/CD agent for offline Docker Compose deployments
- Single-binary CI/CD agent for offline Ubuntu servers: receives git/ZIP
- webhooks, builds and deploys Docker Compose stacks behind host nginx, with an
- admin UI for runs, history, redeploys, Docker cleanup and server stats.
-
-Package: ci-agent
 Version: 0.2.2-r158
 Architecture: amd64
 Maintainer: Mohammad Hoseinzadeh <hoseinzadeh.ashraf@gmail.com>
@@ -181,6 +162,25 @@ Size: 4677184
 MD5sum: 5aff45f8679d22f0c3070644c2c69c07
 SHA1: 28239daa9081ac8ca5e2e84863add340ab055289
 SHA256: 7042640cc6114c79d0626ab05c3916f051e9152cccebef5566655be664ec3fcc
+Section: admin
+Priority: optional
+Description: Single-binary CI/CD agent for offline Docker Compose deployments
+ Single-binary CI/CD agent for offline Ubuntu servers: receives git/ZIP
+ webhooks, builds and deploys Docker Compose stacks behind host nginx, with an
+ admin UI for runs, history, redeploys, Docker cleanup and server stats.
+
+Package: ci-agent
+Version: 0.2.2-r175
+Architecture: amd64
+Maintainer: Mohammad Hoseinzadeh <hoseinzadeh.ashraf@gmail.com>
+Installed-Size: 15144
+Depends: adduser, curl, git
+Recommends: docker.io | docker-ce, nginx, tmux, openssh-server, openssh-client
+Filename: pool/ci-agent_0.2.2-r175_amd64.deb
+Size: 4677188
+MD5sum: 62598bd90b6857dfcf07de121ff189a8
+SHA1: 8277dd8640fdc3e944dbdb963fa196733340919c
+SHA256: 6d9b400751b7a47affd73b8f5d1534ff32b1229bfd546019cd672c27575d6d79
 Section: admin
 Priority: optional
 Description: Single-binary CI/CD agent for offline Docker Compose deployments
