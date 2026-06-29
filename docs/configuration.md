@@ -11,7 +11,7 @@ run_timeout_secs = 1800
 min_free_disk_bytes = 2147483648
 zip_max_bytes = 524288000
 deploy_healthcheck_secs = 30
-redeployable_runs_per_project = 3
+redeployable_runs_per_project = 1
 log_retention_per_project = 50
 pull_policy = "never"
 notify_hook = ""
@@ -28,7 +28,7 @@ zip_url_allowlist = []
 | `min_free_disk_bytes` | pre-flight: a run refuses to start when free disk (data dir or Docker root) is below this |
 | `zip_max_bytes` | ZIP download/upload size cap |
 | `deploy_healthcheck_secs` | how long `up -d` is health-gated before declaring success/failure |
-| `redeployable_runs_per_project` | how many recent successful runs keep prune-protected images |
+| `redeployable_runs_per_project` | how many recent successful runs keep prune-protected images (and stay redeployable). This is the default; you can change it live in **Settings → Maintenance** ("Redeployable runs / project", 1–50), which overrides this value. Auto-prune removes each project's images beyond this count |
 | `log_retention_per_project` | run logs kept per project (older logs are deleted nightly; history rows remain) |
 | `pull_policy` | `never` (offline default) / `missing` / `always` — whether builds may pull base images |
 | `notify_hook` | executable invoked with one JSON argument per event; empty = disabled |

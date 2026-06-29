@@ -20,7 +20,7 @@ mentions a UI page, see the [Admin UI guide](./ui.md).
 | Two projects can't reach each other over the network | They share **no category** (network-isolated) | Give them a **category in common** (Project → Settings) — they then share a private Docker network and can reach each other by hostname. Takes effect as soon as you save |
 | Webhook returns **404** | Wrong project slug **or** wrong token (both return 404 on purpose) | Re-copy the exact webhook URL from the project page; rotate the token if needed |
 | The **nginx apply** button fails | The package's sudo rule is missing (e.g. manual install) | Use the copy-paste commands shown on the same page, or reinstall via the `.deb`/apt which installs the rule |
-| **Redeploy** button is greyed out | The run's Docker images were pruned | Only the last few successful runs keep their images (`redeployable_runs_per_project`). Trigger a fresh run instead |
+| **Redeploy** button is greyed out | The run's Docker image was cleaned up | Only the last few successful runs keep their images — set by **Redeployable runs / project** in Settings → Maintenance (default **1**, so by default only the latest version is redeployable). Raise it to keep more, or trigger a fresh run |
 | I forgot the admin password | — | Run `ci-agent set-password` on the server |
 | After a restore, env vars look wrong/empty | The `secret.key` does not match the restored database | Restore the **matching** `secret.key` too — encrypted values can only be read with the key that wrote them |
 | Queued runs disappeared after a restart | Queued git/ZIP runs do not survive a restart (they are marked "lost at restart") | Trigger them again; queued **redeploys** are re-queued automatically |

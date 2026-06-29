@@ -395,9 +395,11 @@ will free, the items affected, and a single button:
 - old run logs & snapshots (trimmed to retention)
 - stale temp files left by interrupted update/restore uploads
 
-Images belonging to the last *N* successful runs of every project
-(`redeployable_runs_per_project`) and project-data volumes are **protected** and
-**never** removed, so recent versions stay redeployable and app data is safe.
+Images belonging to the last *N* successful runs of every project (the
+**Redeployable runs / project** setting, default **1**) and project-data volumes
+are **protected** and **never** removed, so recent versions stay redeployable and
+app data is safe. With auto-prune on (the default), this same cleanup also runs
+automatically after each deploy and nightly — so you rarely need these buttons.
 **The Docker actions operate on the whole Docker daemon** — if other software
 shares this host's Docker, its dangling images and stopped containers are
 affected too. OS-level cleanup (apt cache, system logs) is intentionally not
@@ -490,8 +492,24 @@ The Settings page collects everything you change from the UI:
   codes you have left. You can **Regenerate backup codes** or **Set up a new
   device** (this shows a fresh QR code to scan). Both ask for your password
   first.
-- **Maintenance** — a checkbox to turn on **nightly auto-prune** of dangling
-  images and build cache.
+- **Maintenance** — controls automatic Docker cleanup:
+  - **Auto-prune old images & build cache (nightly and after each deploy)** — a
+    checkbox, **on by default**. When on, the agent reclaims disk space at two
+    times: right after every successful deploy, and once a night. Each cleanup
+    removes dangling images, build cache, and each project's **old images** that
+    are no longer needed (see the keep count below). Protected images are never
+    touched, and an image a running container still uses is never removed.
+  - **Redeployable runs / project** — a number from **1 to 50** (default **1**).
+    It sets how many of each project's most recent successful runs stay
+    redeployable. Those runs keep their snapshot and their built Docker image
+    (protected from cleanup); older ones are removed. Lower it to save the most
+    disk (1 keeps only the version that's live now); raise it if you want to
+    redeploy further back. Changing it takes effect on the next cleanup.
+
+  > **What this means.** Every deploy builds a new image, and these can be large.
+  > Without cleanup they pile up and fill the disk. The keep count decides how
+  > many old versions are worth keeping so you can roll back; everything older is
+  > safe to delete.
 - **Default subdomain** — set a global **base domain** here; each project port
   can then be reached at `<slug>.<base>` (a subdomain, on by default) and/or
   `<base>/<slug>/` (an apex path, off by default), toggled per port on the

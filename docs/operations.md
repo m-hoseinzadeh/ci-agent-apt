@@ -35,8 +35,9 @@ override (pinned image tags) under `runs/<id>/`. *Redeploy* re-runs `up -d`
 from that snapshot — no fetch, no build — after first **pulling the latest
 image** for any registry-backed service (a failed pull is ignored on an
 air-gapped box). It works as long as the run's images still exist, which the
-cleanup tooling guarantees for the last `redeployable_runs_per_project`
-successful runs of each project.
+cleanup keeps for the last few successful runs of each project — set by
+**Redeployable runs / project** in Settings → Maintenance (default **1**, so by
+default only the version that's live now is redeployable; raise it to keep more).
 
 *Recreate* (on the project's Containers card) is related but different: it
 rebuilds the containers from the last successful snapshot using the project's
@@ -55,8 +56,11 @@ redeploys are re-queued.
 
 1. SQLite backup via `VACUUM INTO` → `data_dir/backups/` (newest 7 kept).
 2. Run-log retention (`log_retention_per_project`).
-3. Optional auto-prune of dangling images + build cache (Settings toggle,
-   off by default; never touches protected images).
+3. Auto-prune (Settings toggle, **on by default**): removes each project's old
+   images beyond the keep count (**Redeployable runs / project**, default 1),
+   plus dangling images and build cache. Protected images and images a running
+   container uses are never touched. This same cleanup also runs after every
+   successful deploy, not only nightly (see *Disk cleanup* below).
 4. Low-disk check → `disk_low` notification.
 5. Certificate renewal — auto-renewable certs (internal CA, self-signed,
    Let's Encrypt HTTP-01) within 30 days of expiry are re-issued and nginx is
@@ -65,6 +69,35 @@ redeploys are re-queued.
 
 It also sweeps stale scratch files (e.g. an abandoned staged update) after an
 hour.
+
+## Disk cleanup
+
+Every deploy builds a new Docker image and tags it per run. These images can be
+large, so old ones must be removed or they fill the disk.
+
+With **auto-prune** on (the default — Settings → Maintenance), cleanup happens
+automatically at two times:
+
+- **After every successful deploy** — the agent removes that project's now-old
+  images, plus dangling images and build cache.
+- **Nightly** — the same cleanup runs across all projects.
+
+**What is kept.** The last *N* successful runs of each project stay redeployable
+and keep their image, where *N* is the **Redeployable runs / project** setting
+(default **1**, range 1–50). Project-data volumes are always kept too.
+
+**What is safe.** The agent never force-removes an image, so an image a running
+container still uses is never deleted, even if the keep count is set low.
+
+Turn auto-prune **off** if you prefer to clean up by hand on the **Storage**
+page, where each cleanup button shows how much space it will free. See the
+[Admin UI guide](./ui.md) for the buttons.
+
+> **Upgrading from an older version?** Auto-prune used to be off by default and
+> only cleaned dangling images and build cache. After this update it is turned
+> on automatically (unless you had explicitly turned it off), and it now also
+> removes old per-project images. Old images that piled up before are cleared on
+> the next nightly pass or the next deploy.
 
 ## Notifications
 
