@@ -169,9 +169,12 @@ A fifth **Actions** tab appears only when the project has custom actions defined
   grants that service the GPU (the `--gpus all` equivalent, written as
   `deploy.resources.reservations.devices`). GPU access additionally requires the
   **NVIDIA Container Toolkit** on the host (`nvidia-ctk runtime configure
-  --runtime=docker`); ticking the box reveals the exact setup commands. All of
-  these take effect on the **next deploy** (or a **Redeploy** / **Recreate** for
-  Image / Dockerfile projects).
+  --runtime=docker`). ci-agent pre-checks for Docker's `nvidia` runtime: when
+  it's missing the card shows a **"GPU toolkit not configured"** warning with the
+  exact setup commands, and a deploy that requests the GPU **fails early with the
+  same guidance** instead of the opaque `could not select device driver "nvidia"`
+  error. All of these take effect on the **next deploy** (or a **Redeploy** /
+  **Recreate** for Image / Dockerfile projects).
 - **Volumes** (Settings, Image / Dockerfile modes) — attach storage to the
   container. Pick a type — a **Named volume** (Docker-managed, survives
   redeploys) or a **Host path** (a bind mount to an absolute path on the server)

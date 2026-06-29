@@ -234,9 +234,11 @@ or **Recreate** also applies them (the agent regenerates the compose override
 from the current settings).
 
 > **GPU prerequisite:** a detected GPU only proves the *driver* is installed.
-> Docker also needs the **NVIDIA Container Toolkit** registered as a runtime, or
-> the deploy fails with `could not select device driver "nvidia"` and rolls back.
-> One time on the host:
+> Docker also needs the **NVIDIA Container Toolkit** registered as a runtime.
+> ci-agent pre-checks for it: if it's missing, the Resource limits card warns
+> **"GPU toolkit not configured"** and a GPU deploy fails early with the setup
+> guidance — rather than the opaque `could not select device driver "nvidia"`
+> error mid-deploy. One time on the host:
 >
 > ```
 > sudo apt-get install -y nvidia-container-toolkit
