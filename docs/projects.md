@@ -215,6 +215,39 @@ write), attach storage from the UI instead: the **Volumes** card on the
 project's Settings tab adds a named volume or a host-path bind mount. See the
 [Admin UI guide](./ui.md).
 
+## Resource limits & GPU
+
+Each project's **Settings** tab has a **Resource limits** card with one row per
+discovered service:
+
+- **CPU / memory caps** — cap a service's CPU (fractional cores, `0.5` = half a
+  core) and memory (in MB) so one container can't starve the box. Blank means no
+  cap. These become a `deploy.resources.limits` block on the service.
+- **GPU access** — when the host has an NVIDIA GPU (detected via `nvidia-smi`),
+  each row also shows a **GPU** checkbox. Ticking it grants that service the
+  GPU — the Compose equivalent of `docker run --gpus all`, written as a
+  `deploy.resources.reservations.devices` block (driver `nvidia`, `count: all`).
+  Select as many services as you need; the choice is per service.
+
+Both apply on the **next deploy**. For Image / Dockerfile projects a **Redeploy**
+or **Recreate** also applies them (the agent regenerates the compose override
+from the current settings).
+
+> **GPU prerequisite:** a detected GPU only proves the *driver* is installed.
+> Docker also needs the **NVIDIA Container Toolkit** registered as a runtime, or
+> the deploy fails with `could not select device driver "nvidia"` and rolls back.
+> One time on the host:
+>
+> ```
+> sudo apt-get install -y nvidia-container-toolkit
+> sudo nvidia-ctk runtime configure --runtime=docker
+> sudo systemctl restart docker
+> ```
+>
+> Verify with `docker run --rm --gpus all nvidia/cuda:12.4.0-base-ubuntu22.04 nvidia-smi`.
+> The Resource limits card surfaces these same commands when you tick a GPU box.
+> On an air-gapped box, side-load the `nvidia-container-toolkit` package first.
+
 ## Git access
 
 - Public/internal repos over `https://` or `file://` work as-is.

@@ -136,9 +136,10 @@ Open a project and you get four tabs:
   [Domains & TLS](./domains.md)).
 - **Deployments** — the **Run history** table and the **Containers** card.
 - **Settings** — the edit form (name, categories, git, branch, mode, paths,
-  ports, run timeout, env vars), a **Volumes** card on Image / Dockerfile
-  projects (see below), **Archive / Unarchive**, and the **Danger zone**
-  (delete).
+  ports, run timeout, env vars), a **Resource limits** card (per-service CPU /
+  memory caps, plus **GPU** access when the host has one) and a **Volumes** card
+  on Image / Dockerfile projects (see below), **Archive / Unarchive**, and the
+  **Danger zone** (delete).
 
 A fifth **Actions** tab appears only when the project has custom actions defined
 (see below). The panel remembers which tab you last used per project.
@@ -158,9 +159,19 @@ A fifth **Actions** tab appears only when the project has custom actions defined
   pruned.
 - **Recreate** (Deployments → Containers card) — rebuild the containers from the
   last successful run's snapshot using the project's **current env vars and
-  config**. Use it to apply env or volume changes; a plain **Restart** keeps the
-  old values. (The agent also recreates automatically when you save changed env
-  vars or volumes.)
+  config**. Use it to apply env, volume, resource-limit or GPU changes; a plain
+  **Restart** keeps the old values. (The agent also recreates automatically when
+  you save changed env vars or volumes.)
+- **Resource limits** (Settings) — one row per discovered service. Cap a
+  service's **CPU** (fractional cores, `0.5` = half a core) and **memory** (in
+  MB) so one container can't starve the box; leave a field blank for no cap.
+  When the host has an **NVIDIA GPU**, each row also gets a **GPU** checkbox that
+  grants that service the GPU (the `--gpus all` equivalent, written as
+  `deploy.resources.reservations.devices`). GPU access additionally requires the
+  **NVIDIA Container Toolkit** on the host (`nvidia-ctk runtime configure
+  --runtime=docker`); ticking the box reveals the exact setup commands. All of
+  these take effect on the **next deploy** (or a **Redeploy** / **Recreate** for
+  Image / Dockerfile projects).
 - **Volumes** (Settings, Image / Dockerfile modes) — attach storage to the
   container. Pick a type — a **Named volume** (Docker-managed, survives
   redeploys) or a **Host path** (a bind mount to an absolute path on the server)
