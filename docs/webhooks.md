@@ -92,3 +92,10 @@ optional `zip_url_allowlist` restricts which hosts may be fetched.
 Webhook-triggered runs **collapse**: if several pushes arrive while a build
 is in progress, intermediate queued runs are marked `superseded` and only
 the newest runs. Manual runs and redeploys never collapse.
+
+## Paused and archived projects
+
+A project with **deploys paused** (Settings → *Pause deploys*) or one that is
+**archived** ignores webhook triggers — the running stack stays up, and manual
+deploys still work on a paused project. Resume or unarchive to let webhooks
+through again. See [Operations](./operations.md).

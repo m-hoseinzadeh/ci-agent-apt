@@ -109,6 +109,24 @@ declared in a `[[variables]]` block (validated on sync).
   exist locally (see `pull_policy`).
 - Service names should stick to letters, digits, `.`, `_`, `-`.
 
+### Editing the compose file in the UI
+
+In **Compose** mode the compose file normally comes from the repo, but the
+project's **Settings** tab has an optional **Edit compose file** box where you
+can paste an **inline override**. When set, that text is deployed instead of the
+file at the compose path — the repo is still cloned and the deploy runs in the
+checkout, so Dockerfiles and relative build contexts still resolve. Leave it
+blank to deploy the committed file as-is.
+
+Two buttons pre-fill the editor so you don't start from scratch:
+
+- **Load from last commit** — the compose file exactly as it is in the repo.
+- **Load from last deploy** — the compose file from this project's last
+  successful deploy.
+
+(In **Inline compose** mode the same box holds the full `docker-compose.yml`
+that is deployed verbatim — there is no repo to load from.)
+
 ### Monorepos
 
 Set a **working directory** on the project to build from a subdirectory of the
@@ -196,6 +214,12 @@ out of the deployed stack.
 
 - Project env vars are set in the UI (KEY=VALUE lines), stored encrypted,
   injected into every compose command, and masked in run logs.
+- **Shared environment** — set global `KEY=VALUE` lines under
+  **Settings → Shared environment** and they are merged into **every** project's
+  build and deploy. Use it for values every stack needs (an internal registry
+  host, `TZ`, an SMTP relay, a CA-bundle path). A per-project variable with the
+  same key **overrides** the shared one. Shared vars are encrypted at rest and
+  apply on each project's next deploy. See the [Admin UI guide](./ui.md).
 - `CI_RUN_ID` and `CI_COMMIT_SHA` are provided during build and deploy.
 
 ## Data

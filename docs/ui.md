@@ -125,20 +125,23 @@ Private clones authenticate with a credential you register on the
 
 Open a project and you get four tabs:
 
-- **Overview** — the **Health** card (a roll-up of the running stack's state),
-  the project's **webhook URLs** with a *Rotate token* button (source modes
-  only), a **Trigger a run** card, and a **Network** card showing the project's
-  categories, the Docker networks it shares, and any sibling projects on those
-  networks.
+- **Overview** — the **Health** card (a roll-up of the running stack's state;
+  the agent also checks this in the background and can email you when a project
+  goes down — see [Operations](./operations.md)), the project's **webhook URLs**
+  with a *Rotate token* button (source modes only), a **Trigger a run** card, and
+  a **Network** card showing the project's categories, the Docker networks it
+  shares, and any sibling projects on those networks.
 - **Domains & Ports** — the ports table (add extra ports, each with its own
   slug and per-port *Subdomain* / *Path* default-URL toggles), the domains for
   each port, and **per-port nginx proxy tuning** (see
   [Domains & TLS](./domains.md)).
 - **Deployments** — the **Run history** table and the **Containers** card.
 - **Settings** — the edit form (name, categories, git, branch, mode, paths,
-  ports, run timeout, env vars), a **Resource limits** card (per-service CPU /
-  memory caps, plus **GPU** access when the host has one) and a **Volumes** card
-  on Image / Dockerfile projects (see below), **Archive / Unarchive**, and the
+  ports, run timeout, env vars, and an optional **Edit compose file** override —
+  see below), a **Resource limits** card (per-service CPU / memory caps, plus
+  **GPU** access when the host has one) and a **Volumes** card on Image /
+  Dockerfile projects (see below), the **deploy controls** (**Pause deploys** and
+  **Auto-redeploy every (hours)** — see below), **Archive / Unarchive**, and the
   **Danger zone** (delete).
 
 A fifth **Actions** tab appears only when the project has custom actions defined
@@ -151,7 +154,8 @@ A fifth **Actions** tab appears only when the project has custom actions defined
   projects (Image / Inline compose) show a **Deploy now** button instead.
 - **Run history** (Deployments) — each row shows the **run number** (counted per
   project from `#1`), status, commit message + committer, start time and
-  duration. A failed run expands to show its error.
+  duration. A failed run expands to show its error. The table paginates in the
+  browser with a page-size picker (**5 / 10 / 50 / all**, default **5**).
 - **Redeploy** (Deployments) — re-run a past **successful** deploy with no fetch
   or build. It first **pulls the latest image** for each registry-backed service
   (on an air-gapped box a failed pull is ignored), then brings the stack up from
@@ -197,6 +201,18 @@ A fifth **Actions** tab appears only when the project has custom actions defined
 - **Container logs** `/projects/<slug>/logs` — live `docker compose logs` for
   the deployed stack, with a service picker, word-wrap toggle, and a clear
   button (see below).
+- **Edit compose file** (Settings) — in **Compose** mode, an optional box to
+  paste an **inline override** of the repo's compose file; when set it is
+  deployed instead of the committed file (the repo is still cloned, so build
+  contexts resolve). **Load from last commit** fills it with the file as it is in
+  the repo; **Load from last deploy** fills it with the last successful deploy's
+  file. Leave blank to deploy the committed file as-is. See
+  [Projects](./projects.md).
+- **Deploy controls** (Settings) — **Pause deploys** stops webhook-triggered
+  deploys (a **deploys paused** chip shows) while leaving the running stack up;
+  manual deploys and redeploys still work, and **Resume deploys** re-enables
+  webhooks. **Auto-redeploy every (hours)** (0–168, `0` = off) re-runs the last
+  successful deploy on that interval. See [Operations](./operations.md).
 - **Archive / Unarchive** (Settings) — archived projects reject webhooks.
 - **Delete** (Settings → Danger zone) — a hard delete that removes the project
   and **all** its Docker resources (containers, images, networks), run history,
@@ -301,7 +317,7 @@ typing. Two surfaces share one UI:
 In either mode you can navigate directories, **download** a file to your
 browser, **upload** a file into the current directory, **edit** small text
 files inline, create folders, and rename or **delete** entries. Delete and
-overwrite are confirmed in the browser and recorded in the [audit log](./audit.md);
+overwrite are confirmed in the browser and recorded in the [audit log](./ui.md);
 deletes are recursive for folders, so double-check the path. Very large files
 should be moved over the shell rather than the inline editor (capped at 1 MB).
 
@@ -336,9 +352,10 @@ All three apply through the same safe path as the project nginx page
     deleted project, or one ci-agent never wrote).
 
   Each row shows the file name, owner, the hostnames it serves, size and last
-  modified. **Unmanaged** files have a **View** button to read the file and a
-  **Delete config** button to remove it; managed and default files can't be
-  deleted here, so you can't lock yourself out by accident.
+  modified. **Every** row has a **View** button that opens the file's on-disk
+  contents in a read-only modal. Only **unmanaged** files also get a **Delete
+  config** button (type-to-confirm); managed and default files can't be deleted
+  here, so you can't lock yourself out by accident.
 
 ## Firewall `/firewall`
 
@@ -365,6 +382,15 @@ A simple front end for the host's **UFW** firewall — no command line needed.
 > the box over SSH and run `sudo ufw status` to check. *Rule didn't apply?* The
 > agent needs its firewall sudo rule; on a package install this is set up for
 > you (see [Security](./security.md)).
+
+## Tunnel `/tunnel`
+
+Set this box's tunnel **Role** — **Off**, **Online** (a public relay that also
+serves its own apps), or **Local** (a private/NAT'd box that dials out) — and,
+on an Online box, manage the tunnels and hostname routes; on a Local box, the
+relay connection settings. It lets a box with no public IP serve its apps
+through a public one, with TLS terminating on the private box. Full guide:
+**[Reverse tunnel](./tunnel.md)**.
 
 ## Storage `/storage`
 
@@ -510,6 +536,16 @@ The Settings page collects everything you change from the UI:
   > Without cleanup they pile up and fill the disk. The keep count decides how
   > many old versions are worth keeping so you can roll back; everything older is
   > safe to delete.
+- **Automation API token** — a single bearer token for the read-only automation
+  API. **Generate token** (then **Regenerate** or **Revoke**) — while no token is
+  set the API is disabled. Send it as `Authorization: Bearer <token>` to
+  `GET /api/health`, `/api/projects`, or `/api/runs/{id}` so an internal monitor
+  or cron box can poll status without a session or 2FA. Triggering deploys stays
+  on the per-project webhook tokens. See [Operations](./operations.md).
+- **Shared environment** — `KEY=VALUE` lines (one per line) merged into **every**
+  project's build and deploy; a per-project variable of the same name wins.
+  Stored encrypted; applied on each project's next deploy. Click **Save**. See
+  [Projects](./projects.md).
 - **Default subdomain** — set a global **base domain** here; each project port
   can then be reached at `<slug>.<base>` (a subdomain, on by default) and/or
   `<base>/<slug>/` (an apex path, off by default), toggled per port on the

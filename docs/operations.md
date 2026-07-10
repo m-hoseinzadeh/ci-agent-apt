@@ -52,6 +52,61 @@ webhook pushes collapse to the newest (`superseded`). Queued git/ZIP runs do
 not survive a restart (they are failed as "lost at restart"); queued
 redeploys are re-queued.
 
+## Pausing deploys (change freeze)
+
+Each project's **Settings** tab has a **Pause deploys** button. While a project
+is paused, **webhook-triggered** deploys are suppressed and a **deploys paused**
+chip is shown — but the running stack stays up, and **manual** deploys and
+**redeploys** still work. Use it during a change freeze or an incident, then
+**Resume deploys** to let webhooks through again. Scheduled auto-redeploys (below)
+are also suppressed while paused.
+
+## Scheduled auto-redeploy
+
+Each project's **Settings** tab has an **Auto-redeploy every (hours)** field
+(0–168, `0` = off). When set, the agent re-runs the project's **last successful
+deploy** on that interval. It's handy for refreshing an image pinned to a moving
+tag (e.g. `:latest`) and for giving a flaky stack a periodic recreate. The first
+run lands one full interval after you save, and scheduled redeploys are skipped
+while deploys are paused.
+
+## Health monitoring & down-alerts
+
+Separately from the deploy-time health gate, the agent **continuously monitors**
+every non-archived project in the background (about every 90 seconds), using the
+same checks the project's **Health** card shows. If a project falls into a
+**problem** state and stays there (a short debounce avoids alerting on a brief
+blip), the agent fires the **notify hook** *and* sends an **SMTP alert** — and
+sends a **recovery** notice when the project comes back. A mere *degraded*
+(warning) state does not alert.
+
+This catches a container that crash-loops or is OOM-killed **between** deploys —
+something the deploy-time gate can't see. It uses the same SMTP settings as
+[email alerts](#email-alerts-on-failed-deployments) below; set those up to
+receive the emails. The last-alerted state is remembered across restarts, so a
+restart neither re-alerts nor loses a pending recovery.
+
+## Automation API
+
+A small **read-only** HTTP API lets an internal monitoring or cron box poll
+status without a browser session or 2FA. Generate a token on the **Settings**
+page (**Automation API token → Generate token**) and send it as a bearer header:
+
+```bash
+curl -H 'Authorization: Bearer <token>' https://ci.example.internal/api/health
+```
+
+| Endpoint | Returns |
+|---|---|
+| `GET /api/health` | each project's health `status` (`healthy` / `degraded` / `problem`) |
+| `GET /api/projects` | the list of projects |
+| `GET /api/runs/{id}` | one run's status and metadata |
+
+The API is **disabled until a token is set**, and the token is stored encrypted
+at rest. **Triggering** deploys stays on the per-project
+[webhook tokens](./webhooks.md) — the API only reads. Revoke or regenerate the
+token any time on the Settings page.
+
 ## Housekeeping (nightly)
 
 1. SQLite backup via `VACUUM INTO` → `data_dir/backups/` (newest 7 kept).
@@ -141,3 +196,17 @@ The **Maintenance page** covers the database part interactively: create and
 download backups on demand, and restore by uploading a backup — the restore
 is validated, staged, and applied at the next service restart with the
 replaced database kept as a safety copy.
+
+### Copying backups off-box (backup hook)
+
+Backups sitting on the same disk don't help if that disk fails. Set
+`backup_hook` in `config.toml` to any executable and the agent runs it after
+**each** successful backup, passing the backup file's path as the single
+argument — so you can rsync or scp it to a mounted share or another host. Its
+exit status and output are logged. Empty (the default) disables it.
+
+```bash
+#!/bin/sh
+# backup_hook = "/etc/ci-agent/copy-backup.sh"
+rsync -a "$1" /mnt/backup-share/ci-agent/
+```

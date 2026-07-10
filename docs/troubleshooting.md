@@ -24,6 +24,9 @@ mentions a UI page, see the [Admin UI guide](./ui.md).
 | I forgot the admin password | — | Run `ci-agent set-password` on the server |
 | After a restore, env vars look wrong/empty | The `secret.key` does not match the restored database | Restore the **matching** `secret.key` too — encrypted values can only be read with the key that wrote them |
 | Queued runs disappeared after a restart | Queued git/ZIP runs do not survive a restart (they are marked "lost at restart") | Trigger them again; queued **redeploys** are re-queued automatically |
+| Webhook push does nothing, no run starts | The project has **deploys paused** (or is archived) | Click **Resume deploys** (or unarchive) on the project's Settings tab — see [Operations](./operations.md) |
+| A **Local** tunnel box won't connect to the relay | Wrong relay address/token/fingerprint, or port **7000** blocked on the Online box | Check **Online server** (`host:7000`), token and fingerprint on the Local box; open port **7000** on the Online box's **Firewall** page — see [Reverse tunnel](./tunnel.md) |
+| A tunnel **route** shows "no backend" | The Local box for that tunnel hasn't connected yet | Bring the Local box online and check its **Connection status** — see [Reverse tunnel](./tunnel.md) |
 
 > **Tip:** the **Audit** page lists recent actions and webhook hits, and each
 > run has a full live log on its run page — both are good first places to look

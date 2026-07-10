@@ -42,6 +42,7 @@ nginx.
 - **[Project conventions](./projects.md)** — what a deployable repo must look like.
 - **[Webhooks](./webhooks.md)** — trigger deployments from anywhere.
 - **[Domains & TLS](./domains.md)** — multiple domains, nginx, certificates.
+- **[Reverse tunnel](./tunnel.md)** — serve a NAT'd box through a public one.
 - **[Configuration](./configuration.md)** — every config.toml key.
 - **[Operations](./operations.md)** — queueing, rollback, retention, backups.
 - **[Security](./security.md)** — auth model, two-factor login, exposure guidance.

@@ -46,6 +46,13 @@ Webhooks authenticate with a 256-bit random URL token (constant-time
 compare; unknown slug and bad token are both `404` so projects can't be
 enumerated) — see [Webhooks](./webhooks.md).
 
+The optional **automation API** (`/api/*`) is guarded by a single
+admin-generated **bearer token** (constant-time compare, stored encrypted at
+rest). The whole surface is **disabled until a token is set**, and it is
+**read-only** — it exposes health, project and run status but cannot trigger
+deploys or change anything. Set or revoke it on the **Settings** page; see
+[Operations](./operations.md).
+
 Project env vars and stored **git credentials** (tokens or passwords for private
 clones) are encrypted at rest (XChaCha20-Poly1305, key file `0600`) and masked in
 run logs and the UI.

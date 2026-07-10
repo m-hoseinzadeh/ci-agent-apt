@@ -15,6 +15,7 @@ redeployable_runs_per_project = 1
 log_retention_per_project = 50
 pull_policy = "never"
 notify_hook = ""
+backup_hook = ""
 secret_key_file = "/etc/ci-agent/secret.key"
 zip_url_allowlist = []
 ```
@@ -32,6 +33,7 @@ zip_url_allowlist = []
 | `log_retention_per_project` | run logs kept per project (older logs are deleted nightly; history rows remain) |
 | `pull_policy` | `never` (offline default) / `missing` / `always` — whether builds may pull base images |
 | `notify_hook` | executable invoked with one JSON argument per event; empty = disabled |
+| `backup_hook` | executable run after each successful backup, receiving the backup file's path as its single argument. Use it to copy backups off-box (rsync/scp to a mounted share) so a single-disk failure can't lose them. Empty = disabled |
 | `secret_key_file` | 32-byte key for env-var encryption; auto-generated `0600` on first start |
 | `zip_url_allowlist` | URL prefixes allowed for ZIP-URL fetches; empty = allow all (air-gapped default) |
 
@@ -49,7 +51,20 @@ in the UI, on the Settings page — see [Operations](./operations.md).
 ## Environment overrides
 
 `CI_AGENT_LISTEN`, `CI_AGENT_DATA_DIR`, `CI_AGENT_SECRET_KEY_FILE`,
-`CI_AGENT_MAX_CONCURRENT_RUNS`, `CI_AGENT_NOTIFY_HOOK` override the file.
+`CI_AGENT_MAX_CONCURRENT_RUNS`, `CI_AGENT_NOTIFY_HOOK`, `CI_AGENT_BACKUP_HOOK`
+override the file.
+
+## Settings managed in the UI (not in `config.toml`)
+
+A few operational settings are stored in the database and edited on the
+**Settings** page, not in the config file:
+
+- **Automation API token** — a bearer token for the read-only automation API
+  (`GET /api/health`, `/api/projects`, `/api/runs/{id}`). See
+  [Operations](./operations.md) and the [Admin UI guide](./ui.md).
+- **Shared environment** — `KEY=VALUE` variables merged into every project's
+  build and deploy (a per-project key of the same name wins). See
+  [Projects](./projects.md).
 
 ## CLI
 
