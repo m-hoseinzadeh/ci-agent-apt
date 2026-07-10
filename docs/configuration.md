@@ -72,6 +72,7 @@ A few operational settings are stored in the database and edited on the
 ci-agent serve                [--config /etc/ci-agent/config.toml]   # default
 ci-agent set-password         [--config ...]                         # reset admin password
 ci-agent reset-2fa            [--config ...]                         # clear two-factor auth
+ci-agent panel-port <on|off|status>                                  # emergency direct IP:port access
 ci-agent apply-staged-update                                         # internal; run as root by systemd
 ci-agent --version | -V                                              # print the running build and exit
 ci-agent --help | -h                                                 # usage summary
@@ -80,6 +81,15 @@ ci-agent --help | -h                                                 # usage sum
 `reset-2fa` clears the two-factor (2FA) secret and backup codes — use it if
 you lose your authenticator phone and your backup codes. The next login
 starts a fresh 2FA enrollment. See [Security](./security.md).
+
+`panel-port` re-opens the panel by IP address and port when your domain or DNS
+is down. `on` binds `0.0.0.0:8044`, opens the firewall port, and restarts, so
+the panel also answers at `http://<server-ip>:8044`; `off` returns to
+`127.0.0.1:8044` (reachable only through nginx) and closes the port; `status`
+(the default with no argument) just prints the current state. Access still needs
+your password and two-factor code. This is the server-shell counterpart of the
+Host page's **Direct port access** switch — see [Admin UI → Host](./ui.md) and
+[Security](./security.md).
 
 `apply-staged-update` is invoked by the systemd unit's privileged pre-start
 step to swap in a binary staged by the Maintenance page's

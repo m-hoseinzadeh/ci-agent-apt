@@ -339,6 +339,18 @@ Host-level controls in one place:
 - **Global nginx config** — an http-level snippet included before every site
   (`gzip`, `server_tokens off;`, a shared `limit_req_zone`, …). Server blocks
   belong to projects, not here.
+- **Direct port access** — an emergency switch to reach this panel straight by
+  IP address and port, for when your domain or DNS is down. Normally the panel
+  listens on loopback only and you reach it through nginx at your domain. Click
+  **Enable — open port 8044** and the panel binds all interfaces
+  (`0.0.0.0:8044`), opens that port in the firewall, restarts, and then also
+  answers at `http://<server-ip>:8044`. The card shows an **Enabled** chip and
+  the current `listen` address while it is on. Click **Disable — lock to
+  loopback** to return to loopback only and close the firewall port. Either
+  action restarts the panel, so **you are logged out** and log in again after a
+  few seconds. Access stays protected by your password and two-factor code the
+  whole time. The `ci-agent panel-port` command does the same from the server
+  shell — see [Configuration → CLI](./configuration.md).
 
 All three apply through the same safe path as the project nginx page
 (write → `nginx -t` → reload, rolled back on a failed test).

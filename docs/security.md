@@ -94,6 +94,15 @@ server {
   window sends your password in cleartext — set
   `listen = "127.0.0.1:8044"` before first start and run the wizard
   through an SSH tunnel instead.
+- **Emergency direct access:** if your domain or DNS later goes down and you
+  can't reach the panel through nginx, use the **Direct port access** switch on
+  the [Host page](./ui.md) (or `ci-agent panel-port on` on the server) rather
+  than editing `listen` by hand. It binds `0.0.0.0:8044`, opens the firewall
+  port, and restarts, so the panel answers at `http://<server-ip>:8044` — the
+  sanctioned inverse of the loopback lock. Login still requires your password
+  and two-factor code, but this is **plain HTTP over the open network**: use it
+  only to recover, then turn it off (**Disable — lock to loopback** /
+  `ci-agent panel-port off`) once nginx is healthy again.
 - Set the admin password **immediately after first start**; the first-run
   setup page is open until then.
 
