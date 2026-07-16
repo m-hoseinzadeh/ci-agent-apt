@@ -180,6 +180,11 @@ in order:
 > offline. Lost your phone with no backup codes left? Run `ci-agent reset-2fa`
 > on the server and log in to enroll again. See [Security](./security.md).
 
+Once the password is set, the domain steps (3–5) offer a **Skip for now**
+link: you can use the panel by IP and port right away, and the wizard returns
+as a security reminder at each login until the lockdown completes (or you
+[remove the domain for good](./security.md)).
+
 Prefer to never expose the port, even briefly? Set
 `listen = "127.0.0.1:8044"` *before* the first start and run the wizard
 through an SSH tunnel:

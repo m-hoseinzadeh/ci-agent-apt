@@ -350,7 +350,16 @@ Host-level controls in one place:
   action restarts the panel, so **you are logged out** and log in again after a
   few seconds. Access stays protected by your password and two-factor code the
   whole time. The `ci-agent panel-port` command does the same from the server
-  shell — see [Configuration → CLI](./configuration.md).
+  shell — see [Configuration → CLI](./configuration.md). While the port is
+  open, each login shows a **lock to loopback** reminder you can skip.
+- **Admin domain** — shows the domain nginx serves this panel on (with a
+  **verified** chip once it has been proven through nginx). **Remove domain —
+  re-open port 8044** is the permanent way back to direct IP:port access:
+  unlike Direct port access it clears the stored domain too, so nothing asks
+  you to lock down to it again — instead each login shows a skippable reminder
+  to bind a domain. The panel restarts (you are logged out), the firewall port
+  opens, and the nginx site file is left in place for you to delete. The
+  `ci-agent remove-domain` command does the same from the server shell.
 
 All three apply through the same safe path as the project nginx page
 (write → `nginx -t` → reload, rolled back on a failed test).

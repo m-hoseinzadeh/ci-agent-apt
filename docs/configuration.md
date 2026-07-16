@@ -73,6 +73,7 @@ ci-agent serve                [--config /etc/ci-agent/config.toml]   # default
 ci-agent set-password         [--config ...]                         # reset admin password
 ci-agent reset-2fa            [--config ...]                         # clear two-factor auth
 ci-agent panel-port <on|off|status>                                  # emergency direct IP:port access
+ci-agent remove-domain        [--config ...]                         # unbind the panel domain, back to IP:port
 ci-agent apply-staged-update                                         # internal; run as root by systemd
 ci-agent --version | -V                                              # print the running build and exit
 ci-agent --help | -h                                                 # usage summary
@@ -90,6 +91,14 @@ the panel also answers at `http://<server-ip>:8044`; `off` returns to
 your password and two-factor code. This is the server-shell counterpart of the
 Host page's **Direct port access** switch — see [Admin UI → Host](./ui.md) and
 [Security](./security.md).
+
+`remove-domain` unbinds the panel's admin domain for good and goes back to
+direct IP:port access: it clears the stored domain, binds `0.0.0.0:8044`, opens
+the firewall port, and restarts. Unlike `panel-port on` (which keeps the domain
+for when nginx recovers), this is the permanent way back — after it, each login
+shows a skippable reminder to bind a domain again. The nginx site file
+`/etc/nginx/conf.d/ci-agent.conf` is left in place for you to delete. The same
+action is on the Host page's **Admin domain** card.
 
 `apply-staged-update` is invoked by the systemd unit's privileged pre-start
 step to swap in a binary staged by the Maintenance page's

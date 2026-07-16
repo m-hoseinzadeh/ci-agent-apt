@@ -102,7 +102,14 @@ server {
   sanctioned inverse of the loopback lock. Login still requires your password
   and two-factor code, but this is **plain HTTP over the open network**: use it
   only to recover, then turn it off (**Disable — lock to loopback** /
-  `ci-agent panel-port off`) once nginx is healthy again.
+  `ci-agent panel-port off`) once nginx is healthy again. While the port is
+  open, every login shows a skippable **lock to loopback** reminder.
+- **Going back to IP:port for good:** to drop the domain entirely (not just
+  bridge an outage), use **Remove domain** on the [Host page](./ui.md) or
+  `ci-agent remove-domain` on the server. It clears the stored domain, binds
+  `0.0.0.0:8044`, opens the firewall port, and restarts. The same plain-HTTP
+  caveat applies permanently; each login then shows a skippable reminder to
+  bind a domain again.
 - Set the admin password **immediately after first start**; the first-run
   setup page is open until then.
 
