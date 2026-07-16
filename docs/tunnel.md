@@ -17,13 +17,23 @@ traffic is passed straight through to the private box.
 ## The two boxes (roles)
 
 Every ci-agent install has a **Role**, set on the **Tunnel** page in the
-sidebar (`/tunnel`). There are three choices:
+sidebar (`/tunnel`). While tunneling is off, the page shows two cards — pick
+the one that matches this box:
 
-| Role | Button | What the box becomes |
-|---|---|---|
-| **Off** | **Turn Off** | A normal ci-agent. No tunneling. (The default.) |
-| **Online** | **Make Online (relay)** | A public box that is **both** a normal ci-agent **and** a relay for private boxes. |
-| **Local** | **Make Local (dial out)** | A private/NAT'd box that **dials out** to an Online box. |
+| Role | What the box becomes |
+|---|---|
+| **Off** | A normal ci-agent. No tunneling. (The default.) |
+| **Online** (relay) | A public box that is **both** a normal ci-agent **and** a relay for private boxes. |
+| **Local** (dial out) | A private/NAT'd box that **dials out** to an Online box. |
+
+Picking a card only opens that role's settings — nothing changes yet. Each
+role's screen has an **On/Off switch** at the top: turn it on to activate the
+role, turn it off to go back to a plain ci-agent (and back to the two cards).
+You can fill in everything **before** switching on; staged tunnels, routes and
+connection settings take effect the moment the switch flips. While a role is
+active, a link above its screen still opens the **other** role's settings, so
+you can stage or tidy them without turning anything off — switching on from
+there replaces the active role directly.
 
 - **Online** = the public helper. It keeps hosting its own apps *and* forwards
   traffic for the private boxes that connect to it.
@@ -70,7 +80,8 @@ into the Local box.
 
 ### On the Online (public) box
 
-1. Set the role to **Online** (**Make Online (relay)**).
+1. Pick the **Online** card and turn the switch **on**. (You can also stage
+   steps 2–4 first and switch on afterwards.)
 2. Under **Add tunnel**, fill:
    - **Id** — a short name the Local box will present (e.g. `box-a`). 1–63
      characters: `a–z`, `0–9`, `-`, `_`, `.`.
@@ -98,9 +109,9 @@ into the Local box.
 
 ### On the Local (private) box
 
-1. Set the role to **Local** (**Make Local (dial out)**). Fill the connection
-   details first — the switch reminds you to.
-2. In the **Local settings** card, enter the values from the Online box:
+1. Pick the **Local** card. The switch stays disabled until the connection
+   details below are saved — fill them in first.
+2. In the **Connection settings** card, enter the values from the Online box:
    - **Online server** — the relay's address as `host:port`, e.g.
      `relay.example.com:7000` (port 7000 is the default control port).
    - **Tunnel id** — the id you created (e.g. `box-a`).
@@ -112,7 +123,8 @@ into the Local box.
      Keep **80** so per-host HTTPS certificate renewal can work through the
      tunnel. (The relay forwards each visitor to whichever port they arrived on
      regardless.)
-3. Click **Save local settings**. The box dials out and connects.
+3. Click **Save settings**, then turn the switch **on**. The box dials out and
+   connects.
 
 A **Connection status** card on the Local box shows **connected** (with the
 time since) or **disconnected**, plus a **Reconnect now** button and the last
@@ -128,7 +140,8 @@ Online box needs no certificate for tunneled hostnames.
 
 ## Statuses you'll see
 
-- **Role chip** (top of the page): `off`, `online`, or `local`.
+- **Role header** (top of the page): the picked role with an `off` or `active`
+  chip, next to the On/Off switch.
 - **Tunnels table** → *Status*: **connected** or **offline**.
 - **Routes table** → *Backend*: **live** (a connected tunnel is behind it) or
   **no backend** (the tunnel hasn't connected yet).

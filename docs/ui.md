@@ -406,12 +406,14 @@ A simple front end for the host's **UFW** firewall — no command line needed.
 
 ## Tunnel `/tunnel`
 
-Set this box's tunnel **Role** — **Off**, **Online** (a public relay that also
-serves its own apps), or **Local** (a private/NAT'd box that dials out) — and,
-on an Online box, manage the tunnels and hostname routes; on a Local box, the
-relay connection settings. It lets a box with no public IP serve its apps
-through a public one, with TLS terminating on the private box. Full guide:
-**[Reverse tunnel](./tunnel.md)**.
+Set this box's tunnel **Role**. While tunneling is off the page shows two role
+cards — **Online** (a public relay that also serves its own apps) and **Local**
+(a private/NAT'd box that dials out). Picking one opens that role's screen with
+an **On/Off switch** and only its settings: on the Online screen you manage
+tunnels and hostname routes; on the Local screen, the relay connection
+settings. Nothing changes until you turn the switch on. It lets a box with no
+public IP serve its apps through a public one, with TLS terminating on the
+private box. Full guide: **[Reverse tunnel](./tunnel.md)**.
 
 ## Storage `/storage`
 
