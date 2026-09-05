@@ -133,17 +133,22 @@ server {
 ## Managing nginx and TLS
 
 One-click nginx apply shells out via `sudo -n` to a **narrow NOPASSWD
-allowlist** (installed by the package at `/etc/sudoers.d/`) limited to exactly
-`tee` a `/etc/nginx/conf.d/*.conf` file, `nginx -t`, and `systemctl reload
-nginx`. The same allowlist backs the **Host page** editors (the admin-panel
-vhost and the global http snippet are just more conf.d files), its **service
-controls** — a fixed set of `systemctl restart nginx|docker|ci-agent` and
-`journalctl -u <those>` — and the **Firewall page**, which is limited to the
-`ufw` status/allow/deny/reject/delete/enable/disable/reload commands (the
-arguments are validated in-process). Nothing arbitrary. No interactive prompt;
-if the rule is absent the call fails fast and the manual copy-paste commands
-still work. The agent re-checks and repairs this allowlist on every boot, so it
-self-heals if it drifts. TLS cert/key PEMs are written by the unprivileged agent
+allowlist** (installed by the package at `/etc/sudoers.d/`). The allowlist names
+its commands literally — `nginx -t`, `systemctl reload nginx`, a fixed set of
+`systemctl restart nginx|docker|ci-agent` and `journalctl -u <those>` for the
+**Host page** service controls, and the argument-free `ufw` status/enable/
+disable/reload for the **Firewall page**. It contains no wildcards at all.
+
+The three actions whose arguments come from you — writing a conf.d file, adding
+a firewall rule, deleting one — go through the agent's own privileged helper
+subcommands instead. Those refuse to run unless they are actually root and
+re-check every path and rule field themselves, which is a real boundary in a way
+that a `sudo` wildcard never was. The same path backs the Host page editors (the
+admin-panel vhost and the global http snippet are just more conf.d files).
+Nothing arbitrary. No interactive prompt; if the rule is absent the call fails
+fast, the page tells you so, and the manual copy-paste commands still work. The
+agent re-checks and repairs this allowlist on every boot, so it self-heals if it
+drifts. TLS cert/key PEMs are written by the unprivileged agent
 into its own data dir (nginx's master reads them), so cert issuance needs no
 `sudo`. See [Domains & TLS](./domains.md).
 
