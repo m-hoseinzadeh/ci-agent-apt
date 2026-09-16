@@ -14,8 +14,12 @@ with an authenticator app such as Google Authenticator — and **10 backup
 codes**. Save the backup codes somewhere safe; each one works once if you
 ever lose your phone.
 
-> **Lost your phone?** Use a backup code on the code-entry screen, or run
-> `ci-agent reset-2fa` on the server to clear 2FA and enroll again. See
+You can enrol **more than one device**, and a code from any of them signs you
+in. Add and remove them on the **Settings** page.
+
+> **Lost your phone?** Use a backup code on the code-entry screen, then remove
+> the lost device from **Settings** and add a new one. No codes left either?
+> Run `ci-agent reset-2fa` on the server to clear 2FA and enroll again. See
 > [Security](./security.md) for the full 2FA model.
 
 ## Branding (server name & logo)
@@ -537,10 +541,18 @@ The Settings page collects everything you change from the UI:
 - **Change password** — current password, new password (8+ characters),
   confirm; click **Update password**. Changing it **signs out every other
   session** (you stay logged in on this browser).
-- **Two-factor authentication** — shows whether 2FA is on and how many backup
-  codes you have left. You can **Regenerate backup codes** or **Set up a new
-  device** (this shows a fresh QR code to scan). Both ask for your password
-  first.
+- **Two-factor authentication** — lists every enrolled authenticator with when
+  it was added and last used, and how many backup codes you have left. A code
+  from **any** listed device signs you in.
+  - **Add a device** — optionally name it ("iPhone", "Work laptop"; blank gets
+    numbered automatically), then scan the QR code it shows. Devices you
+    already have keep working.
+  - **Remove** — un-enrols that one device; codes from it stop working. Your
+    last remaining device can't be removed, so add its replacement first.
+  - **Regenerate backup codes** — issues a fresh set of 10 and retires the old
+    ones.
+
+  All three ask for your password first.
 - **Maintenance** — controls automatic Docker cleanup:
   - **Auto-prune old images & build cache (nightly and after each deploy)** — a
     checkbox, **on by default**. When on, the agent reclaims disk space at two

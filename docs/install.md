@@ -177,8 +177,10 @@ in order:
    required; the panel stays locked until you enroll.
 
 > **Note:** the QR code is drawn by the agent itself, so 2FA setup works fully
-> offline. Lost your phone with no backup codes left? Run `ci-agent reset-2fa`
-> on the server and log in to enroll again. See [Security](./security.md).
+> offline. You can enrol extra devices later from **Settings**, and a code from
+> any of them signs you in. Lost your phone with no backup codes left? Run
+> `ci-agent reset-2fa` on the server and log in to enroll again. See
+> [Security](./security.md).
 
 Once the password is set, the domain steps (3–5) offer a **Skip for now**
 link: you can use the panel by IP and port right away, and the wizard returns

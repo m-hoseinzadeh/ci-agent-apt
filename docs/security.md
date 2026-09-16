@@ -31,16 +31,24 @@ changes something is CSRF-protected and written to the audit log.
   after the current one, so a small clock difference between phone and
   server is fine. A code that was **already used** is rejected, so a
   captured code can't be replayed while it's still valid.
+- **Several devices at once.** You can enrol more than one authenticator —
+  a phone and a laptop, say — and a code from **any** of them logs you in.
+  Each device is listed on the **Settings** page and can be removed on its
+  own; the others keep working. Adding one never disables the others. The
+  **last** remaining device can't be removed, so you can't accidentally lock
+  yourself out — add the replacement first.
 - **Backup codes.** When you enable 2FA the agent shows **10 one-time backup
   codes**. Save them somewhere safe — each one logs you in once if you lose
-  your phone.
-- **The secret and backup codes are encrypted at rest** with the same key
+  your phone. They belong to the account, not to a device, so adding or
+  removing a device leaves them alone.
+- **Device secrets and backup codes are encrypted at rest** with the same key
   that protects project secrets (`secret_key_file`), never stored in plain
   text.
-- **Lost your phone?** Use a backup code on the code-entry page, or run
-  `ci-agent reset-2fa` on the server to clear 2FA — the next login starts a
-  fresh enrollment. See the [Admin UI guide](./ui.md) for day-to-day 2FA
-  management (regenerate backup codes, change the secret).
+- **Lost your phone?** Sign in with a backup code, then remove the lost device
+  on the **Settings** page and add a new one. With no codes left either, run
+  `ci-agent reset-2fa` on the server to clear every device — the next login
+  starts a fresh enrollment. See the [Admin UI guide](./ui.md) for day-to-day
+  2FA management.
 
 Webhooks authenticate with a 256-bit random URL token (constant-time
 compare; unknown slug and bad token are both `404` so projects can't be

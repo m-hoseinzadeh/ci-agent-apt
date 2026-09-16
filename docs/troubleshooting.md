@@ -11,7 +11,7 @@ mentions a UI page, see the [Admin UI guide](./ui.md).
 | Every login lands on a "lock the listener to loopback" reminder | `listen` is on a public address (e.g. `0.0.0.0`) — either **Direct port access** is on, or the config was edited by hand | If the open port is intentional, click **Skip for now** — the reminder returns each login while the port is open. Otherwise lock down: click **Lock to 127.0.0.1 and restart**, or set `listen = "127.0.0.1:8044"` in `/etc/ci-agent/config.toml` and restart |
 | Can't reach the panel — the domain or DNS is down | nginx/DNS is broken, so the domain URL no longer works, but the server itself is up | On the server run `ci-agent panel-port on` — the panel re-opens at `http://<server-ip>:8044` (still needs your password + 2FA). Fix nginx/DNS, then `ci-agent panel-port off` to lock back to loopback. You can also toggle this from the **Host** page's **Direct port access** card if you can still reach it — see [Security](./security.md) |
 | Want to stop using a domain and go back to `http://<server-ip>:8044` for good | The domain was a bad fit (moved network, no DNS, starting over) | Run `ci-agent remove-domain` on the server, or use **Remove domain** on the **Host** page's **Admin domain** card. The panel restarts on the open port; a skippable reminder to bind a domain shows at each login. Delete `/etc/nginx/conf.d/ci-agent.conf` when convenient — see [Security](./security.md) |
-| Login asks for a code but I lost my phone | You no longer have your authenticator app | Use one of your **backup codes** on the code screen. No codes left? Run `ci-agent reset-2fa` on the server, then log in and enroll again |
+| Login asks for a code but I lost my phone | You no longer have your authenticator app | If you enrolled a second device, use a code from that one. Otherwise use one of your **backup codes** on the code screen, then remove the lost device on the **Settings** page and add a new one. No codes left either? Run `ci-agent reset-2fa` on the server, then log in and enroll again |
 | "Check for updates" says **unreachable** | The server is offline / air-gapped (this is normal) | Nothing to fix. Update with the **signed offline upload** on the Maintenance page, or by `apt` / `scp` |
 | "Apply & restart" runs but **System & versions** still shows the old release | The service unit predates self-update and lacks the `ExecStartPre` apply step (the in-app update swaps only the binary, never the unit) | Add the step once via a drop-in — see the note under [Installation → Upgrading](./install.md). Confirm with `systemctl cat ci-agent \| grep ExecStartPre` |
 | Updating the agent fails with **413 Request Entity Too Large** | The admin nginx vhost caps the upload body (default 1 MB) and the release bundle is larger | Add `client_max_body_size 0;` inside the `server { … }` block of `/etc/nginx/conf.d/ci-agent.conf`, then `sudo nginx -t && sudo systemctl reload nginx` |
@@ -69,6 +69,6 @@ generated nginx server block with a `listen 443 ssl;` block — example in
 [Security](./security.md).
 
 **Can I turn off two-factor auth?**
-No — it is required. You can change the secret (new phone) or regenerate
-backup codes from the **Settings** page, and clear it with `ci-agent reset-2fa`
-if you are locked out.
+No — it is required. From the **Settings** page you can add more authenticator
+devices, remove ones you no longer use (as long as one is left) and regenerate
+backup codes; `ci-agent reset-2fa` clears every device if you are locked out.
