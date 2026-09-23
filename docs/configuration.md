@@ -68,6 +68,9 @@ A few operational settings are stored in the database and edited on the
 
 ## CLI
 
+Run these commands with `sudo`. They need to read `/etc/ci-agent`. When they finish, any
+files they created are given back to the `ci-agent` user, so the service can still use them.
+
 ```
 ci-agent serve                [--config /etc/ci-agent/config.toml]   # default
 ci-agent set-password         [--config ...]                         # reset admin password
