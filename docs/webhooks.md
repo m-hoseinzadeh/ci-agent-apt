@@ -35,9 +35,27 @@ Body is optional JSON:
 | `commit` | build an exact commit (fetched on top of the shallow clone); if it can't be fetched or checked out, the run **fails** rather than deploying branch `HEAD` |
 
 Plain **GitHub / GitLab / Gitea push payloads are accepted as-is**: the
-branch is read from `ref: "refs/heads/..."`, the commit from
-`after`/`checkout_sha`, the repo URL from `repository.*` — anything missing
-falls back to the project's configuration. Unknown fields are ignored.
+commit is read from `after`/`checkout_sha`; anything missing falls back to the
+project's configuration. Unknown fields are ignored. Point the git server's
+webhook at the `/git` URL with content type **`application/json`** (a
+form-encoded body is rejected with `422`).
+
+A git server fires its webhook for more than the deploys you want, so the
+agent **filters** what it receives — each check runs only when its signal is
+present, so a plain `curl` or script call is never filtered:
+
+- **Event:** if the request has an `X-GitHub-Event`, `X-Gitea-Event`,
+  `X-Gogs-Event` or `X-Gitlab-Event` header, only a push (`push` /
+  `Push Hook`) deploys. Anything else — including the `ping` GitHub sends when
+  you create the webhook — is skipped.
+- **Branch:** if the body has a `ref`, it must be `refs/heads/<branch>` where
+  `<branch>` is the project's configured branch (or the `branch` override).
+  Pushes to other branches and tag pushes are skipped.
+
+A skipped hit still answers `202`, with `{"skipped": "<reason>"}`, and shows on
+the **Audit** page. The payload's `repository.*` URL is used only when the
+project has no repo configured — a push to a mirror never redirects which repo
+the project builds from.
 
 After first-run setup the agent listens only on `127.0.0.1`, so call webhooks
 through your **admin domain** (the same nginx site that serves the panel), not
@@ -82,7 +100,7 @@ optional `zip_url_allowlist` restricts which hosts may be fetched.
 
 | Code | Meaning |
 |---|---|
-| `202` | accepted; body `{"run_id": N}` |
+| `202` | accepted; body `{"run_id": N}` — or `{"skipped": "<reason>"}` when the event/branch filter (or a deploy pause) dropped it |
 | `404` | unknown project **or** bad token (indistinguishable on purpose) |
 | `413` | request body too large (the webhook body cap is 1 MiB) |
 | `422` | body present but unusable (bad JSON, missing `zip_url`, no git URL anywhere) |
