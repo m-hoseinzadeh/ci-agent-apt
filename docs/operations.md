@@ -47,7 +47,8 @@ vars or volumes.
 
 ## Queueing
 
-Serial per project; at most `max_concurrent_runs` executing overall; rapid
+Serial per project; at most `max_concurrent_runs` executing overall (editable
+live in **Settings → Parallel deploys**); rapid
 webhook pushes collapse to the newest (`superseded`). Queued git/ZIP runs do
 not survive a restart (they are failed as "lost at restart"); queued
 redeploys are re-queued.

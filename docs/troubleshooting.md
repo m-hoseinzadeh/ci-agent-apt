@@ -44,7 +44,8 @@ locally.
 
 **Can it run several deployments at the same time?**
 Runs for the same project are always one at a time. Across all projects, the
-limit is `max_concurrent_runs` (default `1`, good for small servers).
+limit is **Settings → Parallel deploys** (default `1`, good for small servers;
+the config key is `max_concurrent_runs`). Changes apply immediately.
 
 **What happens if a deployment breaks?**
 The agent health-checks the new containers. If they fail, it automatically
