@@ -59,9 +59,8 @@ override the file.
 A few operational settings are stored in the database and edited on the
 **Settings** page, not in the config file:
 
-- **Automation API token** — a bearer token for the read-only automation API
-  (`GET /api/health`, `/api/projects`, `/api/runs/{id}`). See
-  [Operations](./operations.md) and the [Admin UI guide](./ui.md).
+- **API keys** — keys for scripts and AI agents, each with its own access
+  level, managed on the **API keys** page. See [API & AI agents](./api.md).
 - **Shared environment** — `KEY=VALUE` variables merged into every project's
   build and deploy (a per-project key of the same name wins). See
   [Projects](./projects.md).

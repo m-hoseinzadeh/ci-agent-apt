@@ -89,24 +89,16 @@ restart neither re-alerts nor loses a pending recovery.
 
 ## Automation API
 
-A small **read-only** HTTP API lets an internal monitoring or cron box poll
-status without a browser session or 2FA. Generate a token on the **Settings**
-page (**Automation API token → Generate token**) and send it as a bearer header:
+Scripts, monitoring boxes and AI agents can use ci-agent over HTTP with an
+**API key**. Create keys on the **API keys** page. A **read** key can poll
+health and run status, an **operator** key can also deploy and change projects,
+and an **admin** key can do everything. Example:
 
 ```bash
-curl -H 'Authorization: Bearer <token>' https://ci.example.internal/api/health
+curl -H 'Authorization: Bearer cia_…' https://ci.example.internal/api/v1/health
 ```
 
-| Endpoint | Returns |
-|---|---|
-| `GET /api/health` | each project's health `status` (`healthy` / `degraded` / `problem`) |
-| `GET /api/projects` | the list of projects |
-| `GET /api/runs/{id}` | one run's status and metadata |
-
-The API is **disabled until a token is set**, and the token is stored encrypted
-at rest. **Triggering** deploys stays on the per-project
-[webhook tokens](./webhooks.md) — the API only reads. Revoke or regenerate the
-token any time on the Settings page.
+The full endpoint list is in [API & AI agents](./api.md).
 
 ## Housekeeping (nightly)
 

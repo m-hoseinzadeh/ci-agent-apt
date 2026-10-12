@@ -462,6 +462,34 @@ offered: the agent runs unprivileged — use the **Server shell** for that.
 
 Every admin action and accepted webhook: logins (and failures), project
 changes, token rotations, triggers, cancellations, prunes, settings changes.
+Changes made with an API key show the key as the actor (`api:<key name>`).
+
+## API keys `/api-keys`
+
+API keys let scripts and AI agents use this server through the
+[API](./api.md). Each key has an access level:
+
+- **Read** — look at projects, runs, build logs, container logs and health.
+- **Operator** — read, plus create image-mode projects, edit projects, change
+  environment variables, deploy, cancel, and start/stop/restart containers. It
+  can't choose a git repository, zip URL, inline compose file or category.
+- **Admin** — operator, plus choose those sources, archive and delete
+  projects, run commands inside containers, and read the audit log. An admin
+  key means full access to the server.
+
+To create a key, fill in **Create key** (a name, the level and when it
+expires) and click **Create key**. The page then shows the key **once**, with a
+**Prompt for your AI agent** you can paste into the agent. The prompt contains
+the key, the API address and links to the docs. Copy both before you leave the
+page.
+
+The **Keys** table lists every key with its level, the first characters of the
+key, its status (**active**, **expired** or **revoked**), and when and from
+which IP address it was last used. **Revoke** stops a key immediately. A
+revoked or expired key can then be **deleted**.
+
+**Connect an AI agent** shows the same prompt with placeholders. **What each
+level can do** lists every API endpoint and the level it needs.
 
 ## Maintenance `/maintenance`
 
@@ -571,12 +599,8 @@ The Settings page collects everything you change from the UI:
   > Without cleanup they pile up and fill the disk. The keep count decides how
   > many old versions are worth keeping so you can roll back; everything older is
   > safe to delete.
-- **Automation API token** — a single bearer token for the read-only automation
-  API. **Generate token** (then **Regenerate** or **Revoke**) — while no token is
-  set the API is disabled. Send it as `Authorization: Bearer <token>` to
-  `GET /api/health`, `/api/projects`, or `/api/runs/{id}` so an internal monitor
-  or cron box can poll status without a session or 2FA. Triggering deploys stays
-  on the per-project webhook tokens. See [Operations](./operations.md).
+- **Automation API** — a pointer to the **API keys** page, where keys for
+  scripts and AI agents are managed.
 - **Shared environment** — `KEY=VALUE` lines (one per line) merged into **every**
   project's build and deploy; a per-project variable of the same name wins.
   Stored encrypted; applied on each project's next deploy. Click **Save**. See

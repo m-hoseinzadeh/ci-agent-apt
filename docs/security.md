@@ -54,12 +54,34 @@ Webhooks authenticate with a 256-bit random URL token (constant-time
 compare; unknown slug and bad token are both `404` so projects can't be
 enumerated) — see [Webhooks](./webhooks.md).
 
-The optional **automation API** (`/api/*`) is guarded by a single
-admin-generated **bearer token** (constant-time compare, stored encrypted at
-rest). The whole surface is **disabled until a token is set**, and it is
-**read-only** — it exposes health, project and run status but cannot trigger
-deploys or change anything. Set or revoke it on the **Settings** page; see
-[Operations](./operations.md).
+The **automation API** (`/api/*`) only accepts **API keys** created on the
+**API keys** page. It answers nothing until you create a key.
+
+- Each key is 256-bit random. Only its SHA-256 hash is stored, and it is
+  compared in constant time. The key is shown once.
+- Each key has a level: **read**, **operator** or **admin**. **Operator** and
+  **admin** keys can read every project's environment variables in cleartext.
+- Only **admin** keys can choose what code runs: a git repository, a zip URL,
+  an inline compose file, or a project's categories (which decide which other
+  projects it can reach). A compose file can ask for a privileged container or
+  mount host folders, so an admin key means **full access to the server**.
+  Admin keys can also delete projects and run commands inside containers.
+- **Operator** keys deploy only what an admin set up, plus image-mode projects
+  (whose compose file ci-agent writes itself). Use **read** keys for agents
+  that only need to look.
+- Keys **skip the password and 2FA login**, so give each agent its own key with
+  the lowest level it needs, and set an expiry. Revoking a key takes effect on
+  the next request.
+- Every change made with a key is in the audit log as `api:<key name>`. Each
+  key's last use (time and IP) shows on the API keys page.
+- After 10 wrong keys within a minute, an address gets `429` for a minute.
+- Unlike the admin panel, the API answers under any host name that reaches
+  ci-agent, not only the admin domain. That lets agents on the server use
+  `http://127.0.0.1:<port>/api/v1`. Other machines should use the admin
+  domain over HTTPS, so keys are never sent in cleartext.
+- Container logs are not masked, so a read key can see anything an app prints.
+
+See [API & AI agents](./api.md).
 
 Project env vars and stored **git credentials** (tokens or passwords for private
 clones) are encrypted at rest (XChaCha20-Poly1305, key file `0600`) and masked in

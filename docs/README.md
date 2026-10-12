@@ -41,6 +41,7 @@ nginx.
 - **[Admin UI guide](./ui.md)** — a tour of every page in the panel.
 - **[Project conventions](./projects.md)** — what a deployable repo must look like.
 - **[Webhooks](./webhooks.md)** — trigger deployments from anywhere.
+- **[API & AI agents](./api.md)** — API keys for scripts and AI agents.
 - **[Domains & TLS](./domains.md)** — multiple domains, nginx, certificates.
 - **[Reverse tunnel](./tunnel.md)** — serve a NAT'd box through a public one.
 - **[Configuration](./configuration.md)** — every config.toml key.

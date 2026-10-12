@@ -1,21 +1,21 @@
 Architectures: amd64
-Date: Fri, 02 Oct 2026 11:51:57 +0000
+Date: Mon, 12 Oct 2026 20:23:00 +0000
 Label: ci-agent
 Origin: ci-agent
 Suite: stable
 MD5Sum:
- 8f65688f51b34591be1024a74ee8f974             8080 Packages
- a147e995c961fda7151b2af5a12a67b2             1558 Packages.gz
- b6ebde1d8ec0bab504667d1fa6dacbf2              106 Release
+ b96d4f2cdf389d55dd358e48af8cf45e             8080 Packages
+ 51cdf96c6ab353cfa13070b7c9025f9f             1555 Packages.gz
+ ffc4e7ec61638bd41bf3f7c229b5f187              106 Release
 SHA1:
- ce8cfdec253520f5148ab2f64e115a3ca268a758             8080 Packages
- 67b8727a12fede5f6612b36bfac96a37ac2948ef             1558 Packages.gz
- 264030236d3869a489be25c9d45b5f49e8c04bfb              106 Release
+ f16a2dc151f9c82209aff4a9d932c7a30e32ff7c             8080 Packages
+ 841e401d155e4953ccf24c97538b84db6dca9bf7             1555 Packages.gz
+ 637fbe74b3fc117c0d48fc368a505b42036437d6              106 Release
 SHA256:
- 1d99ca9c8f8f8a8a716548fb39e8e0a94830afa2cdd12b9a5df22dfbb8024f13             8080 Packages
- 6c499ef51a33bf04e05de123700469631d8005f6c149b5212d77d2d23e3637b4             1558 Packages.gz
- 6b0b4c06e46942afb0fb6367ff2b013e26b420428eaa483a02cd736b263771f1              106 Release
+ 4cbb06cd60f6142bd3afae78ebe7f79a71fe7bcb39e29bf347f8c3d20287a7ba             8080 Packages
+ 272614b1439c756dda469ef22b1a159c42a090fd9b9cb2e4d456b42fd98b6c11             1555 Packages.gz
+ 5d2697cdbce1d53827dfe2d9cb57bd8b43f4885539db5be2a3dc632a59f83919              106 Release
 SHA512:
- d34d8a3643912be6610972e776f938d64a23b37133634b05fbf8b1739173e5c36453d1511d22e7851a2af985b310feb7570b3fdb413c11e22a1af17554efc8e8             8080 Packages
- 897633ee08bbf5a2e1c3abb5ea19921ed3ddebdf91f578a3d1a0b6d4bd37ebeded96a7efedf94e07186b9d398c2c2f6c358c2b24201c209d6154dc71cefa1626             1558 Packages.gz
- ad19a81a81ae491bfb62cb377aa21900ca7b4df3b0b5dad6402a7bf15766f4735714e506bfcd434d682b26a4e147c7c72fb9eb4bbffb7db981cb13b5d7afd6d3              106 Release
+ e901f807ae837cab1e678d803851dfca509c27dfef0a9ae24bc1e4d57d2f0179b9a2b5130f237468e451339d12827294908a151a5c926413b4d6daf71e3b99e7             8080 Packages
+ 8c480f8e83448db533b2e07dd537fc4517c551897e12d9b937c858c8fe74423e8d5955831be3900b309db056e0ee651f673cad420bb3323f2e94c5f7fcfecc03             1555 Packages.gz
+ 2f269e8cd1f5a92cf49cdd16dc0424662935fc4777839d0b69662c06ca4138e51b47eacf0ef4fc7a7b9a115a77aaa2be8e9659288c3b8ae6c28d275e3ac1eab9              106 Release
