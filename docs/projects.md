@@ -17,10 +17,16 @@ Pick one when you create the project:
 
 **Compose** and **Dockerfile** are *source* modes: they fetch from git or a
 ZIP and rebuild every run, so webhooks and manual git/ZIP runs apply. **Image**
-and **Inline compose** are *sourceless*: there is nothing to clone or build, so
-they have no webhook endpoints — deploy them with the **Deploy now** button on
-the project's Overview tab (trigger `manual_deploy`). Use them for off-the-shelf
-images (databases, caches) or a hand-written stack you don't keep in git.
+and **Inline compose** are *sourceless*: there is nothing to clone or build.
+Deploy them with the **Deploy now** button in the **Trigger a run** card on the
+project's **Deployments** tab (trigger `manual_deploy`). Use them for
+off-the-shelf images (databases, caches) or a hand-written stack you don't keep
+in git.
+
+The **Webhooks** card on the Deployments tab shows the webhook URLs for every
+mode. A sourceless project with no **Git URL** does not need them: a call to its
+`/git` webhook is answered with `422` and the message
+`no git_url in payload and project has none`.
 
 The conventions below describe **Compose** mode in full; Dockerfile and Image
 modes follow the same env/port/volume rules through the compose file the agent
@@ -57,14 +63,17 @@ one of two kinds:
   so no network is involved.
 
 Apps from every enabled source — of either kind — are merged into one list.
+Each source can hold up to 500 apps, and each template file can be up to
+256 KB; anything beyond that is skipped.
 
 - ⚠ Only add sources you trust: deploying one of their apps runs its containers
   on this host.
 
-Catalog apps reference public images (e.g. `redis:7-alpine`). On an
-internet-connected host `docker compose up` pulls any missing image
-automatically; on an air-gapped host, pre-load the images first (see
-`pull_policy` and Troubleshooting). Generated passwords live inside the
+Catalog apps reference public images (e.g. `redis:7-alpine`). Every deploy
+tries to pull images first (see *Images and pulling* below), so an
+internet-connected host fetches them by itself. On an air-gapped host the pull
+fails quietly, so pre-load the images first (see
+[Troubleshooting](./troubleshooting.md)). Generated passwords live inside the
 project's compose file — copy them from the configure form before creating.
 
 A source template (`apps/redis.toml`) looks like:
@@ -99,15 +108,97 @@ generate = true            # form field pre-filled with a generated secret
 `{{HTTP_PORT}}` is replaced by the chosen port; every other `{{TOKEN}}` must be
 declared in a `[[variables]]` block (validated on sync).
 
+A `[[variables]]` block has these fields:
+
+| Field | Required | Meaning |
+|---|---|---|
+| `key` | yes | the `{{KEY}}` placeholder it fills |
+| `label` | yes | the form field's label |
+| `default` | no | a value pre-filled in the form |
+| `generate` | no | `true` pre-fills a freshly generated secret (passwords, tokens) |
+| `description` | no | help text for the field |
+
+### App actions in a template
+
+A template can also ship ready-made **actions** — for example a database backup
+and restore. They are copied onto the project when you create it, and you can
+run or edit them later on the project's **Actions** page — open it with the
+**Actions** button at the top of the project page (see the
+[Admin UI guide](./ui.md)). Add them as `[[actions]]` blocks. Like
+`[[variables]]`, they must come after all the top-level keys:
+
+```toml
+[[actions]]
+key = "backup"
+label = "Backup (SQL dump)"
+kind = "backup"            # run | backup | restore
+service = "db"             # compose service the command runs in
+command = "mariadb-dump -uroot -p\"$MARIADB_ROOT_PASSWORD\" --all-databases"
+filename = "mariadb-{{DATE}}.sql"
+
+[[actions]]
+key = "restore"
+label = "Restore from SQL dump"
+kind = "restore"
+service = "db"
+upload_path = "/tmp/restore.sql"
+load_command = "mariadb -uroot -p\"$MARIADB_ROOT_PASSWORD\" < {{FILE}}"
+```
+
+- Every action needs `key`, `label`, `kind` and `service`. Keys must be unique.
+- `run` and `backup` need a `command`. `run` shows the output; `backup` sends the
+  output to your browser as a file named by `filename`.
+- `restore` needs `upload_path` and `load_command`. The uploaded file is copied to
+  `upload_path` inside the container, then `load_command` runs.
+- Commands run **inside** the container (`sh -c`), so they can read the
+  container's own environment variables. Only `{{DATE}}` (a `YYYYMMDD-HHMMSS`
+  stamp) and, for restore, `{{FILE}}` are filled in by the agent.
+
 ## The compose file
 
 - Default path `docker-compose.yml`, configurable per project.
 - Services **with a `build:` section** are built every run. The agent pins
   their image to `ci-agent/<project>-<service>:run-<N>` — do **not** set
   `image:` on build services yourself.
-- Services without `build:` use whatever image they name; it must already
-  exist locally (see `pull_policy`).
-- Service names should stick to letters, digits, `.`, `_`, `-`.
+- Services without `build:` use whatever image they name. The agent tries to
+  pull it before each deploy (see *Images and pulling* below).
+- Service names may only use letters, digits, `.`, `_` and `-`. Any other
+  character fails the deploy with
+  `service name "…" contains unsupported characters`.
+
+### What the agent adds to your compose file
+
+The agent never edits your file. It adds a small extra file (an *override*) on
+top of it at deploy time. For every service the override:
+
+- pins build services to `ci-agent/<project>-<service>:run-<N>`;
+- sets `container_name: ci-agent--<project>-<service>`, so containers have
+  predictable names in `docker ps` — any `container_name` you set is replaced;
+- adds `restart: unless-stopped` when the service has no `restart:` of its own
+  (a service with `restart: "no"` keeps it);
+- attaches the service to the project's category networks (see
+  *Categories & networking* below);
+- adds the ports, volumes, resource limits and GPU access you set on the
+  **Settings** tab.
+
+### Images and pulling
+
+Before every deploy and every redeploy the agent runs
+`docker compose pull --ignore-buildable`. This fetches a newer copy of each
+`image:` service (for example a moving `:latest` tag). Services with `build:`
+are skipped here.
+
+If the pull fails — always the case on an air-gapped box — the run log shows a
+warning and the deploy carries on with the images already on the server.
+
+The `pull_policy` config key only changes the **build** step: `always` adds
+`--pull` to `docker compose build`, so base images in your Dockerfiles are
+refreshed. `never` and `missing` do the same thing (no `--pull`). See
+[Configuration](./configuration.md).
+
+> **What this means.** On a server with internet access, images update
+> themselves on each deploy. On an offline server nothing breaks — the agent
+> just uses what you loaded with `docker load`.
 
 ### Editing the compose file in the UI
 
@@ -137,8 +228,12 @@ checkout).
 
 ## Web exposure
 
-Publish a **fixed loopback port** that matches the project's registered HTTP
-port:
+Host nginx proxies `your-domain → 127.0.0.1:<port>`, where `<port>` is the
+project's registered HTTP port. Your app only has to publish that port on the
+host.
+
+**In Compose mode** you can write the mapping yourself. Bind it to loopback so
+only nginx on this server can reach it:
 
 ```yaml
 services:
@@ -148,19 +243,44 @@ services:
       - "127.0.0.1:8101:80"
 ```
 
-Host nginx proxies `your-domain → 127.0.0.1:8101`. The project's **nginx**
+**Ports the agent writes for you are open on every network interface.** This
+covers:
+
+- Dockerfile and Image projects (the agent writes the whole compose file), and
+- ports you add on the **Ports** card of the **Settings** tab and attach to a
+  **Service** (Compose and Inline compose modes).
+
+These are written as `host:container` (for example `8101:80`), not
+`127.0.0.1:8101:80`. So other machines can reach the app on that port directly,
+not only through nginx. If your compose file already publishes a port, the agent
+does not add it a second time — so a loopback mapping you write yourself wins.
+
+To keep such a port private, block it **in front of** the server (a network or
+cloud firewall), or leave the port blank for an internal-only app (see
+*Categories & networking* below). Note that Docker writes its own firewall rules
+for published ports, so a UFW rule on the
+[Firewall page](./ui.md) does **not** block them by default — see
+[Security](./security.md).
+
+> **What this means.** A *loopback* address (`127.0.0.1`) is reachable only
+> from the server itself. A port published on *every interface* is reachable
+> from any machine that can reach the server's IP.
+
+The project's **nginx**
 page generates the server block from the domains + port you registered and can
 **apply it in one click** (write → `nginx -t` → reload) when the sudo allowlist
 is installed; otherwise it shows the equivalent copy-paste commands. A project
-can serve **several domains** (with one canonical and 301 redirects) and opt
+can serve **several domains** (one **Primary** domain; the others 301-redirect to it) and opt
 each one into HTTPS — see **[Domains & TLS](./domains.md)**.
 
-The agent warns (without blocking) when the compose file doesn't publish the
-registered port, or when another project claims the same port.
+The agent warns in the run log (without blocking) when no service publishes the
+registered port (`project http_port … not published by any service`), or when
+another project claims the same port (`http_port … also claimed by: …`).
 
-A project can also expose **extra ports** (on the **Domains & Ports** tab) when
-it runs more than one service — each extra port gets its own domains and default
-URL. See [Domains & TLS](./domains.md).
+A project can also expose **extra ports** (on the **Ports** card of the
+**Settings** tab) when it runs more than one service — each extra port gets its
+own domains (attached on the **Domains** tab) and default URL. See
+[Domains & TLS](./domains.md).
 
 ## Categories & networking
 
@@ -183,6 +303,35 @@ and cannot see each other.
   **Internal access**.
 - Changing a project's category list **re-homes its running stack immediately**
   on save — no redeploy needed.
+- There is no separate per-project network: a project's services meet **only**
+  on its category networks.
+
+### Service names must be unique within a category
+
+Projects in the same category share one network, and Docker registers every
+**service name** on it. If a **multi-service** project (say, `web` + `db`) shares
+a category with another project that also has a service called `db`, the name
+`db` can point to the **other** project's container — so your app could talk to
+the wrong database.
+
+The agent guards against this:
+
+- The **create** and **Settings** forms refuse to save a project whose service
+  names clash with another project in a shared category. The message reads
+  *Service name collision on the shared category network: … rename the service
+  or pick a different category.*
+- A deploy that **newly** brings in a clash fails with
+  *shared-network service-name collision: …*. A clash that already existed
+  before only logs a warning in the run log, so an existing project keeps
+  deploying.
+- The **Projects** page shows a **Shared-network service-name
+  collisions** warning banner listing any clashes.
+
+Two **single-service** projects with the same service name (two `app`s, for
+example) are fine — neither looks up the bare name.
+
+**Fix:** rename the service in one of the compose files, or move one project to
+a different category.
 
 > **What this means.** A *Docker network* is a private network that only the
 > containers on it can use. Giving two projects a category in common is how you
@@ -206,9 +355,14 @@ Add a service named exactly `ci-test` with the `ci` profile:
     command: ["./run-tests.sh"]
 ```
 
-It runs after build, before deploy (`docker compose run --rm ci-test`).
+It runs after build, before deploy, as
+`docker compose --profile ci run --rm --no-deps ci-test`.
 A non-zero exit aborts the run — nothing gets deployed. The profile keeps it
 out of the deployed stack.
+
+`--no-deps` means **no other service is started for the test**. If your tests
+need a database, start one inside the test command, or use a database that is
+already running (for example another project in the same category).
 
 ## Environment
 
@@ -234,10 +388,12 @@ bind mounts into the source tree will not survive.
 > (e.g. `./data:/data`) does **not** survive, because the clone is deleted
 > after each run.
 
-For **Image** and **Dockerfile** projects (which have no compose file you
-write), attach storage from the UI instead: the **Volumes** card on the
-project's Settings tab adds a named volume or a host-path bind mount. See the
-[Admin UI guide](./ui.md).
+You can also attach storage from the UI: the **Volumes** card on the project's
+**Settings** tab adds a named volume or a host-path bind mount. It works in every
+mode. For **Image** and **Dockerfile** projects it is the only way, because you
+don't write their compose file. For **Compose** and **Inline compose** projects,
+pick the **Service** the volume belongs to, and the agent adds it to that
+service for you. See the [Admin UI guide](./ui.md).
 
 ## Resource limits & GPU
 
@@ -276,17 +432,30 @@ from the current settings).
 
 ## Git access
 
-- Public/internal repos over `https://` or `file://` work as-is.
+- Public/internal repos over `https://`, `http://` (handy on a trusted LAN) or
+  `file://` work as-is.
+- **SSH keys are not supported.** An SSH-style URL — `git@host:owner/repo.git`
+  or `ssh://git@host:2222/owner/repo.git` — is rewritten to
+  `https://host/owner/repo.git` before cloning (any SSH port is dropped), and
+  then uses the HTTPS credentials below. If your git server only serves SSH,
+  enable HTTPS on it or use the ZIP webhook instead.
 - **Private repos over HTTPS**: register a credential once on the
   **Git credentials** page (in the sidebar) — see the
   [Admin UI guide](./ui.md). Two shapes:
-  - **GitHub** — host `github.com`, the repo **owner**, and a personal access
-    token (with `repo` read access) as the secret. When a project clones
+  - **GitHub** — host `github.com`, the repo **Owner**, and a personal access
+    token (with `repo` read access) as the **Secret**. Leave **Username** blank
+    (it defaults to `x-access-token`). When a project clones
     `https://github.com/<owner>/...`, the matching credential authenticates it
-    automatically. GitHub tokens are only ever sent to `github.com` exactly
-    (lookalike hosts and userinfo tricks in webhook-supplied URLs are rejected).
-  - **Other git hosts** — the host name, an account **username**, and its
-    password or token as the secret.
+    automatically. Leave **Owner** blank for a *host-wide* credential that is
+    used for every repo on `github.com`; a credential for the exact owner always
+    wins over the host-wide one. GitHub tokens are only ever sent to `github.com`
+    exactly (lookalike hosts and userinfo tricks in webhook-supplied URLs are
+    rejected).
+  - **Other git hosts** — the **Host** (with `:port` if it isn't the default,
+    e.g. `gitea.example.com:3000`), an account **Username**, and its password
+    or token as the **Secret**. The credential is used for any repo on that
+    exact host.
+  - Saving the same host + owner again replaces the old credential.
 - Credentials are encrypted at rest, never appear in command lines or run logs,
   and are masked like any project secret.
 - Clones never prompt (`GIT_TERMINAL_PROMPT=0`): a private repo without

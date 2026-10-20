@@ -60,7 +60,8 @@ ports **443**, **80** and **7000**:
 - **443 / 80** — visitor traffic. Requests for a **routed** hostname go down the
   tunnel to the matching private box; **everything else** falls through to this
   box's **own** nginx, so the Online box keeps serving its own apps normally.
-- **7000** — the control port that private (Local) boxes dial into.
+- **7000** — the control port that private (Local) boxes dial into. This port
+  is fixed; you cannot change it.
 
 The box's own nginx is quietly moved to loopback (`127.0.0.1:8443` / `:8080`)
 so the relay can own the public front door. Your existing sites keep working;
@@ -81,7 +82,9 @@ into the Local box.
 ### On the Online (public) box
 
 1. Pick the **Online** card and turn the switch **on**. (You can also stage
-   steps 2–4 first and switch on afterwards.)
+   steps 2–4 first and switch on afterwards. While the role is off, the page
+   says: *This role is off — tunnels and routes staged here take effect the
+   moment you switch it on above.*)
 2. Under **Add tunnel**, fill:
    - **Id** — a short name the Local box will present (e.g. `box-a`). 1–63
      characters: `a–z`, `0–9`, `-`, `_`, `.`.
@@ -93,27 +96,50 @@ into the Local box.
    > Copy these now — the token is shown only once and is never stored in
    > cleartext.
 
-   Copy all three. You need them on the Local box. (If you lose the token, use
-   the **Rotate** button on the tunnel's row to mint a new one — the old one
-   stops working immediately.)
+   Copy all three. You need them on the Local box. The relay fingerprint is
+   also always shown at the top of the **Tunnels (registered agents)** card,
+   but the token is not. (If you lose the token, click **Rotate token** on the
+   tunnel's row to mint a new one. The same card appears with the new token.
+   The old token stops working immediately, so update the Local box too.)
 4. Under **Add route**, tell the relay which hostnames belong to this tunnel:
    - **Hostname** — an exact host (`app.example.com`) or a leftmost wildcard
-     (`*.example.com`). It must **not** clash with a hostname this box's own
-     apps already serve.
+     (`*.example.com`). It must **not** clash with a hostname this box already
+     serves itself: a project domain, a project's default subdomain, or the
+     admin panel's own domain. A wildcard is refused if it would catch any of
+     them.
    - **Tunnel** — pick the tunnel you just added.
    - **PROXY protocol** (optional) — see [below](#proxy-protocol).
    Click **Add route**. Add as many routes as you like; anything not routed
-   here is served by this box's own nginx.
+   here is served by this box's own nginx. If the Local box has not connected
+   yet, you see *Route added — note: tunnel '…' is not connected*. That is fine;
+   the route goes live once it connects.
 5. **Point DNS** for each routed hostname at **this** (the Online box's) public
    IP.
+
+![screenshot: the Online role screen with the Tunnels and Routes tables](TODO)
+
+**Managing tunnels and routes later:**
+
+- **Tunnels table** — each row has **Rotate token** and **Delete**. **Delete**
+  removes the tunnel **and all its routes**.
+- **Routes table** — tick or untick the **PROXY** checkbox on a row to switch
+  PROXY protocol for that route (see *PROXY protocol* below). **Delete** removes
+  the route; that hostname is then served by this box's own nginx again.
+- The reverse also applies: while a route exists for a hostname, you cannot add
+  that hostname as a project domain on this box. ci-agent says
+  *'…' is routed to tunnel '…' — remove that route first*.
 
 ### On the Local (private) box
 
 1. Pick the **Local** card. The switch stays disabled until the connection
-   details below are saved — fill them in first.
+   details below are saved — fill them in first. Next to the switch, a hint
+   lists what is missing, for example *Still needed: token, relay fingerprint —
+   save below to enable.*
 2. In the **Connection settings** card, enter the values from the Online box:
    - **Online server** — the relay's address as `host:port`, e.g.
-     `relay.example.com:7000` (port 7000 is the default control port).
+     `relay.example.com:7000`. The relay always listens on port 7000, so use
+     7000 unless something in between (a NAT rule, for example) forwards a
+     different port to it.
    - **Tunnel id** — the id you created (e.g. `box-a`).
    - **Token** — the one-time token. (Leave blank to keep the current one.)
    - **Relay fingerprint** — the SHA-256 fingerprint from the Online box. This
@@ -124,7 +150,8 @@ into the Local box.
      tunnel. (The relay forwards each visitor to whichever port they arrived on
      regardless.)
 3. Click **Save settings**, then turn the switch **on**. The box dials out and
-   connects.
+   connects. You can save the form in several visits; until everything is in,
+   the message says *Settings saved — still needed before switching on: …*.
 
 A **Connection status** card on the Local box shows **connected** (with the
 time since) or **disconnected**, plus a **Reconnect now** button and the last
@@ -142,7 +169,9 @@ Online box needs no certificate for tunneled hostnames.
 
 - **Role header** (top of the page): the picked role with an `off` or `active`
   chip, next to the On/Off switch.
-- **Tunnels table** → *Status*: **connected** or **offline**.
+- **Tunnels table** → *Status*: **connected** or **offline**. If the relay is
+  not running, the card warns: *The relay isn’t running — connection status is
+  unknown.*
 - **Routes table** → *Backend*: **live** (a connected tunnel is behind it) or
   **no backend** (the tunnel hasn't connected yet).
 - **Local Connection status**: **connected** / **disconnected**.
@@ -154,7 +183,11 @@ from the real visitor. Turn on **PROXY protocol** (per route on the Online box,
 and matched in **Local settings**) to have the relay prepend a small header so
 the private box can recover the **real visitor IP**. When you enable it on the
 Local box you must also set the **Relay IP** (the Online box's public IP), which
-is trusted for `set_real_ip_from`.
+is trusted for `set_real_ip_from`. Without it, saving fails with *Enter the
+relay's IP address to enable PROXY protocol*.
+
+You can switch PROXY protocol for an existing route at any time with the
+**PROXY** checkbox in the **Routes** table on the Online box.
 
 > **Gotcha.** Once PROXY protocol is on for the Local box, its nginx expects the
 > header on **every** connection — so the box is then reachable **only** through
@@ -173,6 +206,18 @@ is trusted for `set_real_ip_from`.
   or pick a different hostname.
 - **A route shows "no backend"** — the Local box for that tunnel hasn't
   connected yet. Check its Connection status.
-- **A mode switch fails** — the agent tests nginx before committing and rolls
-  back to the previous working state if the test fails; the reason is shown in
-  the flash message.
+- **"Switch to Online failed (previous mode kept): …"** — the box could not
+  move its nginx to loopback or take over ports 443/80/7000. Nothing changed;
+  the old mode is still active. Read the reason, fix it (for example another
+  program on port 443), and try again.
+- **"Switched to … , but restoring the public nginx front door failed: … —
+  check nginx"** — this happens when switching to **Off** or **Local**. The new
+  mode **is** active, but nginx did not come back on the public ports. Fix the
+  nginx error shown, then click **Apply config & reload** on each project's
+  **nginx guide** page.
+- **The Local switch stays disabled** — a connection setting is missing. Read
+  the *Still needed: …* hint and fill those fields.
+- **"Enter the relay's IP address to enable PROXY protocol"** — set **Relay IP**
+  or untick **PROXY protocol**.
+- **A rotated token stopped the Local box** — after **Rotate token**, paste the
+  new token on the Local box and click **Save settings**.

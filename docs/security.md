@@ -10,9 +10,21 @@ There is **one admin user**. Login is in two steps:
 
 After a successful login you get an HttpOnly `SameSite=Lax` session cookie
 (also flagged `Secure` when you reached the panel over HTTPS). Logins are
-rate-limited **per client IP** (5 tries a minute, with a global backstop).
-Changing the admin password **signs out all other sessions**. Every action that
-changes something is CSRF-protected and written to the audit log.
+rate-limited **per client IP** (5 tries a minute, with a global backstop of 50
+tries a minute). Every action that changes something is CSRF-protected and
+written to the audit log.
+
+Sessions work like this:
+
+- A session lasts **7 days from your last visit**. Each page you open restarts
+  the 7 days.
+- Sessions are kept **in memory only**. Restarting the service (or the server)
+  logs everyone out. So does a self-update.
+- When you enter the 2FA code, the agent gives you a **new** session cookie. A
+  cookie stolen during the password step is useless after that.
+- Changing the password on the **Settings** page **signs out all other
+  sessions**. The `ci-agent set-password` and `ci-agent reset-2fa` commands do
+  not — restart the service afterwards to sign everyone out.
 
 > **What is 2FA?** "Two-factor" means you need two things to log in:
 > something you *know* (the password) and something you *have* (your phone
@@ -51,11 +63,25 @@ changes something is CSRF-protected and written to the audit log.
   2FA management.
 
 Webhooks authenticate with a 256-bit random URL token (constant-time
-compare; unknown slug and bad token are both `404` so projects can't be
-enumerated) — see [Webhooks](./webhooks.md).
+compare; unknown slug, bad token and archived project are all `404` so
+projects can't be enumerated) — see [Webhooks](./webhooks.md).
+
+**Treat a webhook URL like an admin password.** Whoever has it can start a
+deploy, and the request can also name *what* to build. On the `/git` hook, a
+`git_url` (in the JSON body or `?git_url=`) replaces the project's repository
+for that run. The `/zip` hook always builds the archive at the `zip_url` the
+caller sends. That is the same power as an **admin** API key's code choice. Only an
+admin can see the URL (on the project page, or through an admin API key). If it
+leaks, click **Rotate token** on the project's **Deployments** tab — the old
+URL stops working at once.
 
 The **automation API** (`/api/*`) only accepts **API keys** created on the
-**API keys** page. It answers nothing until you create a key.
+**API keys** page. It answers nothing until a key exists.
+
+> **Upgraded from an older version?** Older releases had a single API token.
+> On upgrade, the agent turns it into a **read**-level key named `legacy`, so
+> existing monitoring keeps working. You'll see it on the **API keys** page.
+> Revoke it if nothing uses it any more.
 
 - Each key is 256-bit random. Only its SHA-256 hash is stored, and it is
   compared in constant time. The key is shown once.
@@ -84,8 +110,9 @@ The **automation API** (`/api/*`) only accepts **API keys** created on the
 See [API & AI agents](./api.md).
 
 Project env vars and stored **git credentials** (tokens or passwords for private
-clones) are encrypted at rest (XChaCha20-Poly1305, key file `0600`) and masked in
-run logs and the UI.
+clones) are encrypted at rest (XChaCha20-Poly1305, key file `0600`) and masked
+(`*****`) in run logs. The admin panel itself shows env values in **cleartext**,
+so anyone logged in to the panel can read them.
 
 ## Network exposure
 
@@ -97,9 +124,14 @@ spoof-resistant — a request only counts as "via nginx" when its `Host`
 matches the bound domain **and** the TCP peer is loopback **and**
 `X-Forwarded-For` is present, so a forged Host header on the public port
 cannot trigger a premature lockdown (or fake one to lock the admin out
-before nginx works). If `listen` is later edited back to a public address,
-the admin UI locks to the wizard again until the listener is back on
-loopback.
+before nginx works). If `listen` is later set back to a public address
+(by hand, **Direct port access** or `panel-port on`), each login shows a
+**lock to loopback** reminder. You can skip it for that login.
+
+After setup, the panel only answers on its own admin domain. Any other domain
+pointed at the agent gets a plain **Under construction** page. Webhooks
+(`/hooks/…`), the API (`/api/…`) and Let's Encrypt challenges are the
+exceptions — they answer on any host name.
 
 - Steady state: `listen` on `127.0.0.1`, access through the wizard's nginx
   site or an SSH tunnel. For TLS, extend the generated server block:
@@ -148,8 +180,9 @@ server {
 - The agent's user is in the `docker` group, which is root-equivalent on
   the host. Inherent to the job — it deploys containers.
 - Builds are **not sandboxed**: a registered repo's Dockerfile runs with
-  full daemon access. Only admins can register projects; don't register
-  repos you don't trust.
+  full daemon access. Only admins (and admin API keys) can register projects
+  or change their source — but a webhook URL can name a source too (see
+  *Model* above). Don't register repos you don't trust.
 - ZIP-URL fetches default to allow-all (`zip_url_allowlist = []`) because
   on an air-gapped network internal hosts are the point. On a connected
   network, set the allowlist. Either way, git and ZIP fetches are blocked
@@ -159,57 +192,119 @@ server {
 - A webhook that **pins an exact commit** must be able to fetch and check that
   commit out — if it can't, the run **fails** rather than quietly deploying
   branch `HEAD` instead.
+- A project's **status callback** makes the agent send HTTP `POST` requests to
+  a URL the admin chooses (only the admin, or an admin API key, can set it).
+  Loopback and LAN addresses are allowed on purpose, because the receiver often
+  runs on the same server or network. Link-local (`169.254.*`, `fe80::`),
+  `0.0.0.0` and broadcast addresses are refused when written as an IP address
+  in the URL (a host name is not looked up for this check). The callback token is stored encrypted and passed to
+  `curl` through standard input, so it never appears in the process list. The
+  `error` text it sends has project/shared env values and git credentials
+  replaced with `*****`. See [Webhooks → Status callback](./webhooks.md).
 
 ## Managing nginx and TLS
 
-One-click nginx apply shells out via `sudo -n` to a **narrow NOPASSWD
-allowlist** (installed by the package at `/etc/sudoers.d/`). The allowlist names
-its commands literally — `nginx -t`, `systemctl reload nginx`, a fixed set of
-`systemctl restart nginx|docker|ci-agent` and `journalctl -u <those>` for the
-**Host page** service controls, and the argument-free `ufw` status/enable/
-disable/reload for the **Firewall page**. It contains no wildcards at all.
+The agent runs as the unprivileged `ci-agent` user. For the few jobs that need
+root, it uses `sudo -n` with a **NOPASSWD allowlist** that the package installs
+at `/etc/sudoers.d/ci-agent-nginx`. The list has no wildcards. It allows:
 
-The three actions whose arguments come from you — writing a conf.d file, adding
-a firewall rule, deleting one — go through the agent's own privileged helper
-subcommands instead. Those refuse to run unless they are actually root and
-re-check every path and rule field themselves, which is a real boundary in a way
-that a `sudo` wildcard never was. The same path backs the Host page editors (the
-admin-panel vhost and the global http snippet are just more conf.d files).
-Nothing arbitrary. No interactive prompt; if the rule is absent the call fails
-fast, the page tells you so, and the manual copy-paste commands still work. The
-agent re-checks and repairs this allowlist on every boot, so it self-heals if it
-drifts. TLS cert/key PEMs are written by the unprivileged agent
-into its own data dir (nginx's master reads them), so cert issuance needs no
-`sudo`. See [Domains & TLS](./domains.md).
+- `nginx -t` and `systemctl reload nginx` (applying nginx config);
+- `systemctl restart nginx|docker|ci-agent` and `journalctl -u <those> -n 200
+  --no-pager` (the **Host** page service controls);
+- `ufw status` (plain, `verbose`, `numbered`), `ufw --force enable`,
+  `ufw disable` and `ufw reload` (the **Firewall** page);
+- the agent's own binary, `/usr/bin/ci-agent`, with any arguments. This is how
+  the agent runs its two privileged helpers, `fs-helper` and `ufw-helper`.
 
-The **host file manager** (`/files`) and the **server shell** run as the agent's
-own user inside the systemd sandbox below — the host filesystem is **read-only**
-apart from the agent's own data dirs, and `sudo` can't authenticate as the
-passwordless agent account, so neither is a general root console. But the
-agent's Docker access is root-equivalent on the host (e.g. `docker run
---privileged`), so treat their blast radius as root SSH access all the same. For
-privileged, filesystem-mutating host work the server shell offers an **Open host
-SSH session** button that logs in as a real admin account via `sshd`, outside
-the sandbox (see [the UI guide](./ui.md)). The container file manager and shell
-are scoped to containers carrying the project's compose label, the same boundary
-as `docker cp` / `docker exec`.
+The helpers handle everything that takes input from you:
+
+- `ufw-helper` adds and deletes firewall rules. It checks every rule field
+  itself.
+- `fs-helper` reads, writes, deletes and sizes files **anywhere on the host**,
+  as root. The File Manager, the disk reports, cleanups and the nginx config
+  editors (project sites, the admin-panel site, the global http snippet) all
+  use it.
+
+Both helpers refuse to run unless they really are root, and they never pass
+your input through a shell.
+
+> **What this means.** The allowlist is narrow in *which programs* it allows,
+> but `fs-helper` is full root access to files by design — the File Manager
+> needs it. So the honest summary is: **the `ci-agent` account can act as root
+> on this server.** The limit is who can log in to the panel, not the sudo
+> rules. Protect the admin password and your 2FA devices accordingly.
+
+If the sudo rule is missing, the privileged button fails fast and the page tells
+you so. The manual copy-paste commands still work. The agent re-checks and
+repairs the allowlist on every start, so it heals itself if the file drifts.
+TLS cert/key PEMs are written by the unprivileged agent into its own data dir
+(nginx's master reads them), so cert issuance needs no `sudo`. See
+[Domains & TLS](./domains.md).
+
+### Server shell and File Manager
+
+Both the **host File Manager** (`/files`) and the **Server shell** are
+**root-equivalent**. Use them as you would a root SSH login:
+
+- The **File Manager** works as the `ci-agent` user first. When it hits a file
+  it may not touch, it retries through `fs-helper` as root. So it can read,
+  edit and delete any file on the host.
+- The **Server shell** runs as the `ci-agent` user. That account can run
+  `sudo /usr/bin/ci-agent …` without a password (see above), and it is in the
+  `docker` group, which is root-equivalent on its own (e.g. `docker run
+  --privileged`).
+- For normal admin work, the shell's **Open host SSH session** button logs you
+  in as a real admin account through `sshd`, with your own password. See
+  [the UI guide](./ui.md).
+- The **container** File Manager and shell are limited to containers that carry
+  the project's compose label — the same boundary as `docker cp` /
+  `docker exec`.
 
 ## Self-update integrity
 
-The Maintenance page's signed-upload update verifies the uploaded `.deb`
-**offline** against the release public key embedded in the binary, pinned to a
-single fingerprint — a valid signature from any other key is rejected — and
-refuses downgrades. Uploading the `ci-agent-offline-*.tar.gz` bundle is the same
+The Maintenance page's update verifies the `.deb` **offline** against the
+release public key embedded in the binary, pinned to a single fingerprint — a
+valid signature from any other key is rejected — and refuses downgrades. The
+online buttons (**Update now**, **Download & stage latest**) download from the
+public apt repository but go through the exact same check, so the network is
+never trusted. Uploading the `ci-agent-offline-*.tar.gz` bundle is the same
 check: the `.deb` and its detached signature are unpacked from it and the
 bundle's own bundled public key is ignored, so trust always rests on the
 embedded key, never one that travels with the upload. The privileged binary swap runs only from systemd's root
 pre-start step, and a crash-looping new binary is rolled back automatically.
 See [the UI guide](./ui.md).
 
-## systemd hardening
+## systemd sandbox
 
-The shipped unit applies `NoNewPrivileges`, `PrivateTmp`,
-`ProtectSystem=strict`, `ProtectHome=read-only`, with writes limited to
-`/var/lib/ci-agent` and `/etc/ci-agent` (plus `/etc/nginx`, so the sudo'd
-config write lands on a writable mount). The privileged `apply-staged-update`
-pre-start step is the only component that writes `/usr/bin`.
+The shipped unit runs the agent as `User=ci-agent`, `Group=docker`, and sets
+`PrivateTmp=yes` (a private `/tmp`). Other common sandbox options are
+**deliberately not set**:
+
+- **`NoNewPrivileges`** — not set, because the agent's privileged pages work
+  through `sudo` (see *Managing nginx and TLS* above), and `sudo` needs to gain
+  privileges.
+- **`ProtectSystem` / `ProtectHome`** — set to `false`. A `sudo` child inherits
+  the service's read-only mounts, so with them even the root `fs-helper` could
+  not write outside a short list of folders. The File Manager, disk reports and
+  cleanups need the whole filesystem, so the helper's own checks are the real
+  boundary instead.
+
+On every start the agent also writes a small drop-in,
+`/etc/systemd/system/ci-agent.service.d/10-ci-agent.conf`. It re-applies these
+settings on boxes that were updated from the panel, and adds
+`AmbientCapabilities=CAP_NET_BIND_SERVICE`. That lets the agent listen on ports
+80 and 443 itself — used only by the tunnel relay in **Online** mode (see
+[Reverse tunnel](./tunnel.md)); with tunnelling off it changes nothing.
+
+The privileged `apply-staged-update` pre-start step is the only component that
+writes `/usr/bin`.
+
+## Common problems and fixes
+
+| Problem | Fix |
+|---|---|
+| Everyone was logged out | Normal after a service restart, server reboot or self-update — sessions live in memory. Log in again. |
+| A webhook URL leaked | Click **Rotate token** on the project's **Deployments** tab, then update the URL wherever you use it. |
+| Lost every 2FA device and all backup codes | Run `sudo ci-agent reset-2fa`, then `sudo systemctl restart ci-agent`, and enroll again at the next login. |
+| A Host, Firewall or File Manager action fails with a `sudo` / "password is required" error | The sudo allowlist is missing or was rejected. Restart the service (it repairs the file on start), then check `journalctl -u ci-agent` for a `visudo` error. |
+| An API key leaked | Click **Revoke** next to it on the **API keys** page. It stops working on the next request. |

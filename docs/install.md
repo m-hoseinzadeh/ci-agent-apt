@@ -163,13 +163,17 @@ in order:
    who can reach the port can claim the instance.
 3. **Bind a domain** for the admin panel — a LAN DNS name or `/etc/hosts`
    entry (e.g. `ci.example.internal`) works on air-gapped networks.
-4. **Install the generated nginx site** — copy-paste commands; the agent
-   never touches nginx itself.
+4. **Install the generated nginx site** — copy-paste commands. The wizard
+   shows them; it never runs them for you.
 5. **Open `http://<your-domain>/`** — when the first request arrives through
    nginx (Host matches, peer is loopback, `X-Forwarded-For` present), the
    agent rewrites `listen` to `127.0.0.1:8044` in its config and restarts.
    From then on the panel is unreachable from outside the server except
    through nginx; the rest of the UI stays locked until this completes.
+   If the automatic rewrite fails, the wizard shows a **Lock to 127.0.0.1 and
+   restart** button (and a `sed` command you can run instead). If
+   `CI_AGENT_LISTEN` is set in the service environment, the wizard can't
+   rewrite `listen` — remove that variable first.
 6. **Set up two-factor authentication (2FA)** — on your first login the panel
    shows a QR code. Scan it with an authenticator app (e.g. Google
    Authenticator) and enter the 6-digit code to finish. **Save the 10 backup
@@ -219,6 +223,7 @@ sudo apt-get update
 apt-get download $(apt-cache depends --recurse --no-recommends --no-suggests \
   --no-conflicts --no-breaks --no-replaces --no-enhances \
   docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin nginx git curl \
+  tmux openssh-server openssh-client \
   | grep "^\w" | sort -u)
 
 cd .. && tar czf debs.tar.gz debs
@@ -229,15 +234,48 @@ scp debs.tar.gz you@airgapped-server:
 connected machine — see section 1; the pin in `99nginx` makes the closure
 resolve to nginx.org's nginx.)
 
+`tmux` and `openssh-server`/`openssh-client` are optional. The package
+recommends them for the server shell's **Open host SSH session** button.
+Leave them out if you don't need that button.
+
 ### CI Agent package (connected machine)
 
+Pick **one** of the two options.
+
+**Option 1 — the signed offline bundle (easiest).** Every release publishes
+`ci-agent-offline-<version>.tar.gz` on the public `ci-agent-apt` releases page.
+It holds the `.deb`, its signature, the release public key and an `install.sh`
+that checks the signature before installing.
+
 ```bash
-# easiest: the .deb (installs user + unit + config in one step)
-curl -fsSL https://m-hoseinzadeh.github.io/ci-agent-apt/Packages \
-  | grep -m1 ^Filename | awk '{print "https://m-hoseinzadeh.github.io/ci-agent-apt/" $2}' \
-  | xargs curl -fsSLO
-scp ci-agent_*.deb you@airgapped-server:
+URL=$(curl -fsSL https://api.github.com/repos/m-hoseinzadeh/ci-agent-apt/releases/latest \
+  | grep -o 'https://[^"]*/ci-agent-offline-[^"]*\.tar\.gz' | head -n1)
+curl -fsSLO "$URL"
+scp ci-agent-offline-*.tar.gz you@airgapped-server:
 ```
+
+**Option 2 — the newest `.deb` from the apt repository, plus its signature.**
+The repository keeps several versions, so the command below sorts them and
+takes the newest one. Then it checks the signature with the repository key.
+
+```bash
+REPO=https://m-hoseinzadeh.github.io/ci-agent-apt
+FILE=$(curl -fsSL "$REPO/Packages" \
+  | awk '/^Version:/{v=$2} /^Filename:/{print v, $2}' | sort -V | tail -n1 | cut -d' ' -f2)
+curl -fsSLO "$REPO/$FILE"
+curl -fsSLO "$REPO/$FILE.asc"
+curl -fsSL "$REPO/ci-agent.gpg" -o ci-agent.gpg
+
+# must print: Good signature from "ci-agent apt repository ..."
+# and the key A80F7309CF26133DBE88E2EC9C5489AAE86BF159
+gpgv --keyring ./ci-agent.gpg "$(basename "$FILE").asc" "$(basename "$FILE")"
+
+scp ci-agent_*.deb ci-agent_*.deb.asc you@airgapped-server:
+```
+
+> **What this means.** The signature proves the package was built by the
+> ci-agent release pipeline and was not changed on the way. If `gpgv` does not
+> say **Good signature**, do not install the file.
 
 ### Base images your projects need (connected machine)
 
@@ -257,10 +295,22 @@ sudo systemctl enable --now docker nginx
 # base images
 sudo docker load -i images.tar
 
-# ci-agent
+# ci-agent — Option 1 (offline bundle). Unpack it in its OWN empty
+# directory, never directly inside a shared folder like /tmp:
+mkdir ci-agent-offline
+tar -C ci-agent-offline -xzf ci-agent-offline-*.tar.gz
+cd ci-agent-offline && sudo ./install.sh && cd ..
+
+# ci-agent — Option 2 (.deb you already verified):
 sudo dpkg -i ci-agent_*.deb
+
 sudo systemctl start ci-agent
 ```
+
+`install.sh` stops with `signature verification FAILED` if the `.deb` does not
+match its signature, and installs nothing. It checks against the key that came
+inside the bundle, so also look at its output: the line `using RSA key …` must
+show `A80F7309CF26133DBE88E2EC9C5489AAE86BF159`.
 
 The default `pull_policy = "never"` means deployments never try to reach a
 registry — they use exactly the images you loaded.
@@ -281,14 +331,26 @@ sudo install -m 0755 ci-agent-x86_64-linux-musl /usr/bin/ci-agent
 sudo systemctl restart ci-agent
 ```
 
-Air-gapped: fetch the new `.deb` on the connected machine, `scp`, `sudo dpkg
--i`. All state survives upgrades (`/etc/ci-agent/config.toml` is a conffile);
-the running release is shown on the Maintenance page, which also offers a
-built-in self-update flow for non-apt installs. There you can upload the whole
-`ci-agent-offline-*.tar.gz` release bundle (the agent pulls the `.deb` and its
-signature out of it), or the `.deb` and its detached `.asc` separately; either
-way the signature is verified offline against the embedded release key before
-the binary is staged.
+Air-gapped: fetch the new bundle or `.deb` on the connected machine (see
+section 4), `scp`, then run `install.sh` or `sudo dpkg -i`. All state survives
+upgrades (`/etc/ci-agent/config.toml` is a conffile).
+
+### Updating from the panel
+
+The **Maintenance** page shows the running release and can update the agent
+for you. This works for every install type (apt, tarball or `.deb`):
+
+1. **Connected server:** click **Check for updates**, then **Update now** next
+   to CI Agent — or click **Download & stage latest**. The agent downloads the
+   newest signed `.deb` from the public apt repository.
+2. **Air-gapped server:** under **CI Agent update**, upload the whole
+   `ci-agent-offline-*.tar.gz` bundle, or the `.deb` and its `.asc` signature
+   separately. Click **Verify & stage update**.
+3. Either way the signature is checked offline against the release key built
+   into the agent, and older versions are refused. When the update is
+   **staged**, click **Apply & restart**.
+4. The service restarts on the new version. If the new version fails to start
+   3 times in a row, the agent automatically goes back to the previous one.
 
 > **Self-update needs one line in the service unit.** Applying a staged
 > binary is done by a root pre-start step, `ExecStartPre=+-/usr/bin/ci-agent
@@ -312,6 +374,21 @@ the binary is staged.
 > Confirm with `systemctl cat ci-agent | grep ExecStartPre`. The drop-in lives
 > outside the packaged unit, so it survives both self-updates and later `dpkg`
 > upgrades. Fresh installs already include the step and need none of this.
+>
+> `systemctl cat ci-agent` also shows a second drop-in,
+> `/etc/systemd/system/ci-agent.service.d/10-ci-agent.conf`, marked "Managed by
+> ci-agent — DO NOT EDIT". The pre-start step writes it on every start, so
+> service settings added in newer releases also reach boxes that were updated
+> from the panel. Leave it alone.
+
+### Common problems and fixes
+
+| Problem | Fix |
+|---|---|
+| "Apply & restart" leaves you on the old version | Add the `ExecStartPre` drop-in shown above. |
+| `install.sh` says `signature verification FAILED` | The download is damaged or not an official release. Download the bundle again. |
+| `gpgv` does not print **Good signature** | Don't install that `.deb`. Download the `.deb`, `.asc` and `ci-agent.gpg` again. |
+| The Maintenance page says the apt repository is unreachable | Normal on an air-gapped server. Upload the offline bundle instead. |
 
 ## 6. Building from source (alternative)
 

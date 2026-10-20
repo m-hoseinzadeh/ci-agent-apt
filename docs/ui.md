@@ -27,7 +27,7 @@ in. Add and remove them on the **Settings** page.
 You can give this install its own **name** and **logo**. Both are optional.
 
 - Set them during first-run setup (the **"Name your server"** step) or later on
-  the **[Settings](./ui.md)** page under **Branding**.
+  the **Settings** page under **Branding** (see *Settings* below).
 - The name shows at the top of the sidebar and in the browser tab title; the
   logo replaces the default mark in the sidebar and is used as the browser
   **favicon** (and on the login page).
@@ -43,13 +43,14 @@ You can give this install its own **name** and **logo**. Both are optional.
 
 A **theme picker** sits at the bottom of the sidebar. Click it to open a list of
 **16 themes**, grouped into **Dark** (8) and **Light** (8), each with a small
-colour swatch. Examples: *Dark · slate* (the default), *Ocean*, *Crimson*,
-*Light*, *Rose*.
+colour swatch. Examples: *Dark · slate* (the default), *Ocean · azure*,
+*Crimson · red*, *Light · gray*, *Rose · blush*.
 
-Pick one and the whole panel changes instantly. Your choice is remembered in the
-browser (`localStorage`) and applied before the page draws, so there's no flash
-on reload. It's purely cosmetic and per-browser — nothing on the server changes,
-and other people who log in keep their own choice.
+Pick one and the whole panel changes instantly. The choice is **one setting for
+the whole server**, saved in the agent's database: it follows you to every
+browser and device you log in from, it is used on the login and 2FA pages too,
+and it is included in backups. It is applied before the page draws, so there's
+no flash on reload. It only changes colours — nothing else.
 
 ## Notes
 
@@ -70,7 +71,7 @@ The home page, refreshed every few seconds. It shows:
   **NVIDIA GPU**, extra gauges show its utilization (with temperature) and
   video memory;
 - two **last-10-minute sparklines** (CPU and memory) that link to the full
-  **[Resources](./ui.md)** page;
+  **Resources** page (see *Resources* below);
 - an **Active runs** table (what's running right now); and
 - a **Recent runs** table (the latest deploy history).
 
@@ -94,24 +95,40 @@ by clicking a dashboard sparkline. It covers the **last 10 minutes** and shows:
 
 ## Projects `/projects`
 
-The **Projects** list shows every project with a live **health badge** (see
-[Operations](./operations.md) for what the badge means) and its categories. A
-**category filter** at the top narrows the list to one category (your last
-choice is remembered in the browser). Two buttons sit at the top:
+The **Projects** page lists every project. Each row shows the project's
+**Name**, **Slug**, **Category**, **Endpoint**, a live **Health** badge (see
+[Operations](./operations.md) for what it means) and its **Last run**. Each row
+has two buttons: **Open** and **Copy** (see *Copying a project* below).
 
-- **New project** — opens the create form.
-- **Browse app catalog** — install a ready-made app instead of writing compose
-  by hand (see [Project conventions](./projects.md)).
+- The **Category** filter above the table shows only one category. Your browser
+  remembers your last choice.
+- **Browse app catalog** (top of the page) installs a ready-made app, so you
+  don't have to write compose by hand (see [Project conventions](./projects.md)).
+- If two projects in the same category use the same service name, a yellow
+  **Shared-network service-name collisions.** banner lists them. Rename one of
+  the services, or move one project to another category.
 
 ### Creating a project
 
-A project is: **name**, **slug** (lowercase, immutable after creation), one or
-more optional **categories** (see below), a [deploy mode](./projects.md) and its
-source (git URL + branch, a Dockerfile path, a prebuilt image, or pasted
-compose), **HTTP port**, **env vars** (encrypted at rest; shown in **cleartext**
-in the form so you can inspect and edit them — the admin is the sole operator of
-their own box), an optional **working directory** (for monorepos) and a **run
-timeout**. The button is **Create project**.
+The **New project** form is the card **below** the project list.
+
+1. Type a **Name**. The **Slug** fills in by itself. You can change the slug
+   now, but never after the project is created. Use lowercase letters, numbers
+   and dashes.
+2. Optional: add one or more **Category** names (see the note below).
+3. Pick **Build from**: *Docker Compose*, *Dockerfile*, *Prebuilt image* or
+   *Inline compose* (see [deploy modes](./projects.md)).
+4. Fill in the fields for that mode: **Git URL** and **Branch**, **Working
+   directory** (for monorepos), **Compose path**, **Dockerfile path**, **Image**
+   or **Compose file**.
+5. Optional: set the **HTTP port**. Leave it blank and a free port is picked for
+   you. In Dockerfile and Prebuilt image mode, **Container port** is the port the
+   app listens on inside the container (blank = same as the HTTP port).
+6. Click **Create project**.
+
+Env vars, the run timeout, volumes and domains are not on this form. You set
+them on the project page after it is created. Env vars are encrypted on disk but
+shown in **cleartext** in the form, so you can read and edit them.
 
 > **What is a category?** A category is a private Docker network. Type **one or
 > more** categories (separated by commas — each becomes a removable chip); the
@@ -123,43 +140,127 @@ timeout**. The button is **Create project**.
 > immediately** — no redeploy needed. See [Project conventions](./projects.md).
 
 Private clones authenticate with a credential you register on the
-**Git credentials** page (see below).
+**Git credentials** page (see *Git credentials* below).
 
-### The project page — four tabs
+### Copying a project
 
-Open a project and you get four tabs:
+You can duplicate a project with its settings.
 
-- **Overview** — the **Health** card (a roll-up of the running stack's state;
-  the agent also checks this in the background and can email you when a project
-  goes down — see [Operations](./operations.md)), the project's **webhook URLs**
-  with a *Rotate token* button (source modes only), a **Trigger a run** card, and
-  a **Network** card showing the project's categories, the Docker networks it
-  shares, and any sibling projects on those networks.
-- **Domains & Ports** — the ports table (add extra ports, each with its own
-  slug and per-port *Subdomain* / *Path* default-URL toggles), the domains for
-  each port, and **per-port nginx proxy tuning** (see
-  [Domains & TLS](./domains.md)).
-- **Deployments** — the **Run history** table and the **Containers** card.
-- **Settings** — the edit form (name, categories, git, branch, mode, paths,
-  ports, run timeout, env vars, and an optional **Edit compose file** override —
-  see below), a **Resource limits** card (per-service CPU / memory caps, plus
-  **GPU** access when the host has one) and a **Volumes** card on Image /
-  Dockerfile projects (see below), the **deploy controls** (**Pause deploys** and
-  **Auto-redeploy every (hours)** — see below), **Archive / Unarchive**, and the
-  **Danger zone** (delete).
+1. Click **Copy** on the project's row in the list, or in the project page
+   header.
+2. In the **Copy project** dialog, type **Copy to name** and **New slug**. The
+   slug must be unique.
+3. Click **Copy project**.
 
-A fifth **Actions** tab appears only when the project has custom actions defined
-(see below). The panel remembers which tab you last used per project.
+The copy gets the same env vars, volumes, service limits and proxy settings.
+Its host ports are changed to free ports, so it doesn't clash with the original.
+Domains and run history are **not** copied, and the copy gets its own new
+webhook token.
+
+![screenshot: the Copy project dialog](TODO)
+
+### The project page
+
+The header shows the project name with an **active** or **archived** chip and
+when it was created. Buttons on the right:
+
+- **Logs** — live container logs (see *Container logs* below).
+- **Shell** — a terminal inside a container (see *Terminals* below).
+- **Files** — browse files inside a container (see *Files* below).
+- **Actions** — only shown when the project has custom actions (see below).
+- **nginx guide** — the project's nginx page.
+- **Copy** — duplicate the project (see *Copying a project* above).
+
+If another project uses the same port, a banner says **Port … is also claimed
+by: …**.
+
+Below the header are four tabs. Each tab has its own address, so you can
+bookmark it:
+
+| Tab | Address | What's on it |
+|---|---|---|
+| **Overview** | `/projects/<slug>` | **Internal access**, **Health**, **Network** |
+| **Domains** | `/projects/<slug>/routing` | the **Domains** card: domains per port, default URLs, **Proxy tuning** |
+| **Deployments** | `/projects/<slug>/deploy` | **Webhooks**, **Trigger a run**, **Run history**, **Containers** |
+| **Settings** | `/projects/<slug>/settings` | the **Settings** card, **Ports**, **Resource limits**, **Volumes**, **Danger zone** |
+
+**Overview tab:**
+
+- **Internal access** — the hostname(s) other projects on a shared Docker
+  network use to reach this app (for example as `DB_HOST`), plus the list of the
+  app's domains. If the running containers have old names, a warning asks you to
+  **Recreate** so the hostnames work.
+- **Health** — a roll-up of the running stack's state. The agent also checks this
+  in the background and can email you when a project goes down (see
+  [Operations](./operations.md)).
+- **Network** — the project's categories, the Docker networks it shares, and
+  every other project you can reach from here, with its hostname.
+
+**Settings tab — the Settings card** holds several small forms, each with its
+own button:
+
+- the edit form (**Name**, **Category**, **Git URL**, **Branch**, **Working
+  directory**, **Build from**, the mode's path or image, **Compose file**, **Run
+  timeout (s)**, **Env vars**) — click **Save**;
+- **Auto-redeploy every (hours)** — click **Save schedule**;
+- **Status callback URL** and **Callback token** — click **Save callback**;
+- **Pause deploys** / **Resume deploys**;
+- **Archive** / **Unarchive**.
+
+### Domains tab
+
+![screenshot: the Domains tab with the primary radio, HTTPS chips and Maintenance checkbox](TODO)
+
+The **Domains** card lists the hostnames that serve this app. When the project
+has more than one port, there is one table per port. Every change is written to
+nginx and reloaded right away.
+
+- **Add domain** — type a hostname (and pick a port, if there are several), then
+  click **Add**.
+- **Primary** — pick one domain with the radio button. The other domains on that
+  port then redirect (301) to it. Pick **None — every domain serves the app
+  directly** to turn the redirect off.
+- **Rename** — edit the hostname in its box and click **Rename**.
+- **Port** (only with several ports) — move the domain to another port.
+- **HTTPS** — a chip shows the certificate state:
+  - **HTTPS** — HTTPS is on.
+  - **covered** — a wildcard certificate already covers this host.
+  - **ready** — a certificate exists; turn HTTPS on from the SSL page.
+  - **renew** — the certificate is close to expiry.
+
+  **Add SSL** (no certificate yet) or **Manage** opens the domain's SSL page
+  (see *SSL for one domain* below).
+- **Maintenance** — tick the checkbox to show a "Down for maintenance" page on
+  this domain instead of the app. An **offline** chip appears. The container
+  keeps running. Untick it to bring the app back.
+- **×** — delete the domain (you are asked to confirm).
+
+Under each port you may also see:
+
+- **Default URL** — only when a base domain is set in **Settings → Default
+  subdomain**. Turn it on or off in the **Ports** card on the **Settings** tab.
+- **Proxy tuning** — click to open. Set **Max upload (MB)** (default 256),
+  **Proxy timeout (s)** (default 300), **WebSockets** (*Forward WebSocket / SSE
+  upgrades*) and **Extra directives**, then click **Save proxy settings**. It
+  applies to every domain on that port. See [Domains & TLS](./domains.md).
+
+> **What this means.** The *primary* domain is the "real" address. Visitors who
+> type another of the app's domains are sent there, so search engines and
+> cookies see one name.
 
 ### What you can do on the project page
 
-- **Trigger a run** (Overview) — run from the configured repo (with an optional
-  URL/branch override), from a ZIP URL, or by uploading a ZIP file. Sourceless
-  projects (Image / Inline compose) show a **Deploy now** button instead.
+- **Trigger a run** (Deployments) — **Run from git** (with optional **Git URL**
+  / **Branch** overrides), **Run from zip URL**, or **Upload & run** a ZIP file.
+  Projects with no source (Prebuilt image / Inline compose) show a **Deploy now**
+  button instead.
+- **Webhooks** (Deployments) — the project's **Git** and **Zip** webhook URLs,
+  and a **Rotate token** button. See [Webhooks](./webhooks.md).
 - **Run history** (Deployments) — each row shows the **run number** (counted per
-  project from `#1`), status, commit message + committer, start time and
-  duration. A failed run expands to show its error. The table paginates in the
-  browser with a page-size picker (**5 / 10 / 50 / all**, default **5**).
+  project from `#1`) and its trigger, the status, the commit message + short hash
+  + committer, the start time and the duration. A failed run shows its error
+  under the row. Pick how many rows to **Show**: **5 / 10 / 50 / All** (default
+  **5**), and page with **Prev** / **Next**.
 - **Redeploy** (Deployments) — re-run a past **successful** deploy with no fetch
   or build. It first **pulls the latest image** for each registry-backed service
   (on an air-gapped box a failed pull is ignored), then brings the stack up from
@@ -170,6 +271,20 @@ A fifth **Actions** tab appears only when the project has custom actions defined
   config**. Use it to apply env, volume, resource-limit or GPU changes; a plain
   **Restart** keeps the old values. (The agent also recreates automatically when
   you save changed env vars or volumes.)
+- **Containers** (Deployments) — a table of the deployed stack's containers.
+  The buttons depend on the state: a running container has **Restart**,
+  **Pause** and **Stop**; a paused one has **Unpause** and **Stop**; a stopped
+  one has **Start** and **Restart**. These act on the live containers, not on a
+  redeploy.
+- **Ports** (Settings) — every port the app publishes, in one table: **Host**
+  (the port published to the outside), **Container** (the port inside; blank =
+  same as host), **Service** (which compose service publishes it; blank = the
+  single `app` service) and **Slug & label**. The **primary** port is the first
+  row. Edit a row and click **Save**; **×** removes an extra port (its domains
+  move back to the primary port). Use the **Add port** row and **Add** for more
+  ports. When a base domain is set, the **Default URL** column has a
+  **Subdomain** and a **Path** checkbox per port. See
+  [Domains & TLS](./domains.md).
 - **Resource limits** (Settings) — one row per discovered service. Cap a
   service's **CPU** (fractional cores, `0.5` = half a core) and **memory** (in
   MB) so one container can't starve the box; leave a field blank for no cap.
@@ -182,53 +297,135 @@ A fifth **Actions** tab appears only when the project has custom actions defined
   exact setup commands, and a deploy that requests the GPU **fails early with the
   same guidance** instead of the opaque `could not select device driver "nvidia"`
   error. All of these take effect on the **next deploy** (or a **Redeploy** /
-  **Recreate** for Image / Dockerfile projects).
-- **Volumes** (Settings, Image / Dockerfile modes) — attach storage to the
-  container. Pick a type — a **Named volume** (Docker-managed, survives
-  redeploys) or a **Host path** (a bind mount to an absolute path on the server)
-  — then give the **source** (volume name or `/host/path`) and the **container
-  path**, and optionally mark it **read-only**. Host paths under system
-  directories (`/etc`, `/usr`, `/var/lib/docker`, …) are refused for safety; use
-  a location like `/opt`, `/srv` or `/mnt`. Saving a volume recreates the stack.
-- **Containers** (Deployments) — a table of the deployed stack's containers
-  with per-container **Start / Stop / Restart / Pause** buttons. These act on
-  the live containers, not on a redeploy.
+  **Recreate**).
+- **Volumes** (Settings, every mode) — attach storage to a container. Pick a
+  type — a **Named volume** (Docker-managed, survives redeploys) or a **Host
+  path** (a bind mount to an absolute path on the server) — then give the
+  **source** (volume name or `/host/path`), the **container path**, and for
+  Compose / Inline compose the **service** (blank = the single `app` service).
+  Optionally tick **read-only**, then click **Add**. Host paths under system
+  directories (`/etc`, `/usr`, `/home`, `/tmp`, `/var/lib/docker`, …) are
+  refused for safety; use a location like `/opt`, `/srv` or `/mnt`. Adding or
+  removing a volume recreates the stack.
 - **Custom actions** `/projects/<slug>/actions` — operator-defined operations
   that run inside a chosen container: a plain **run** command, a **backup**, or
   an **upload-and-restore** (upload a file, then run a load command with
-  `{{FILE}}` substituted). Define them as a small JSON array on the Actions
-  page; once any exist, the **Actions** tab appears. Handy for database
-  dumps/restores.
-- **nginx** page `/projects/<slug>/nginx` — live status, the generated server
-  block with a **drift badge**, and **one-click apply** (write → `nginx -t` →
-  reload) or the equivalent copy-paste commands.
+  `{{FILE}}` substituted). Handy for database dumps and restores. Apps from the
+  catalog can bring their own actions. To add your own, open
+  `/projects/<slug>/actions`, write them as a small JSON array in **Edit
+  actions** and click **Save actions**. The **Actions** header button only
+  appears once at least one action exists.
+- **nginx guide** `/projects/<slug>/nginx` — live status, the generated server
+  block with a **drift badge**, and **Apply config & reload** (write → `nginx
+  -t` → reload) or the equivalent copy-paste commands.
 - **Container logs** `/projects/<slug>/logs` — live `docker compose logs` for
-  the deployed stack, with a service picker, word-wrap toggle, and a clear
-  button (see below).
-- **Edit compose file** (Settings) — in **Compose** mode, an optional box to
-  paste an **inline override** of the repo's compose file; when set it is
-  deployed instead of the committed file (the repo is still cloned, so build
-  contexts resolve). **Load from last commit** fills it with the file as it is in
-  the repo; **Load from last deploy** fills it with the last successful deploy's
-  file. Leave blank to deploy the committed file as-is. See
+  the deployed stack (see *Container logs* below).
+- **Edit compose file** (Settings → **Compose file**) — in **Compose** mode,
+  an optional box to paste an **inline override** of the repo's compose file;
+  when set it is deployed instead of the committed file (the repo is still
+  cloned, so build contexts resolve). **Load from last commit** fills it with
+  the file as it is in the repo; **Load from last deploy** fills it with the last
+  successful deploy's file. Leave blank to deploy the committed file as-is. In
+  **Inline compose** mode this box *is* the whole compose file. See
   [Projects](./projects.md).
 - **Deploy controls** (Settings) — **Pause deploys** stops webhook-triggered
   deploys (a **deploys paused** chip shows) while leaving the running stack up;
   manual deploys and redeploys still work, and **Resume deploys** re-enables
   webhooks. **Auto-redeploy every (hours)** (0–168, `0` = off) re-runs the last
-  successful deploy on that interval. See [Operations](./operations.md).
+  successful deploy on that interval; click **Save schedule**. See
+  [Operations](./operations.md).
+- **Status callback** (Settings) — **Status callback URL** and **Callback
+  token**, saved with **Save callback**. The agent POSTs each status change of
+  runs started by a webhook or the API to this URL, with the token in the
+  `X-CiAgent-Token` header. Runs you start from the panel are not reported.
+  Blank URL = off. See [Webhooks → Status callback](./webhooks.md).
 - **Archive / Unarchive** (Settings) — archived projects reject webhooks.
-- **Delete** (Settings → Danger zone) — a hard delete that removes the project
-  and **all** its Docker resources (containers, images, networks), run history,
-  workspace and nginx config. Type the slug to confirm; blocked while a run is
-  in flight.
+- **Remove project** (Settings → **Danger zone**) — a hard delete. It removes the
+  project and **everything** it created: containers, built images, **named
+  volumes (their data is destroyed)**, the project network, run history, build
+  files and nginx config. Type the slug in **Type `<slug>` to confirm**; the
+  button only works once the slug matches. It is blocked while a deploy is
+  running.
+
+## SSL for one domain `/projects/<slug>/domains/<id>/ssl`
+
+Click **Add SSL** or **Manage** next to a domain on the **Domains** tab. The page
+title is **SSL · *your-domain***.
+
+- **Certificate** — the current status, source, what it covers and when it
+  expires. **Serve HTTPS** turns HTTPS on (HTTP then redirects to HTTPS).
+  **Renew now** renews it.
+- **Issue a certificate** — three tabs:
+  - **Let's Encrypt** — **Issue via HTTP-01** (one host, renews automatically)
+    or **Start wildcard order** (DNS-01, renewed by hand).
+  - **Internal / Self-signed** — made on this server, fully offline. Pick a
+    **Source** and **Wildcard** or **Dedicated**, then **Issue & enable HTTPS**.
+  - **Upload** — paste a certificate and key you got elsewhere, then **Upload &
+    enable HTTPS**.
+
+Full details: [Domains & TLS](./domains.md).
+
+![screenshot: the SSL page for one domain](TODO)
+
+## Certificates `/certs`
+
+All certificates on this server in one place. Open it from the **Certificates**
+link in **Settings → Default subdomain** or on a domain's SSL page.
+
+- **Internal CA** — click **Download root CA (root.crt)** and install it once
+  on your computers; then its certificates are trusted without warnings. The CA
+  is created the first time you issue an Internal CA certificate.
+- **Managed certificates** — every certificate, with what it **Covers**, its
+  **Source** and when it **Expires**. **Renew** or **×** (delete).
+- **Let's Encrypt** — your **Account email**, a staging switch, **Save Let's
+  Encrypt settings**, and **Start wildcard order** for a whole zone.
+- **Add an offline certificate** — make or upload one without internet access,
+  then **Create certificate**.
+
+Full details: [Domains & TLS](./domains.md).
+
+![screenshot: the Certificates page](TODO)
+
+## Offline certs `/offline-certs`
+
+Get a trusted Let's Encrypt certificate for a server that has **no internet**.
+
+1. On a server **with** internet, open **Offline certs**. Under **Issue &
+   export (online server)**, enter the **Domain**, pick **Wildcard** or
+   **Dedicated**, and click **Start order**.
+2. Publish the DNS TXT record it shows, then click **Validate & issue**.
+3. **Download** the bundle from the **Offline certificates** table.
+4. On the offline server, open **Offline certs**. Under **Import a bundle
+   (offline server)**, choose the **Bundle file** and click **Import bundle**.
+
+**Renew** in the table starts a fresh DNS order; download and import again.
+Full details: [Domains & TLS](./domains.md).
+
+![screenshot: the Offline certificates page](TODO)
 
 ## Run detail `/projects/<slug>/runs/<number>`
 
-Status timeline, source/commit/image metadata, and the **live log**: the full
-run log replays instantly, then streams in real time while the run is active. A
-`Cancel` button TERM→KILLs the run's process tree. The log viewer has the same
-controls described under [Container logs](./ui.md) below.
+Open a run from **Run history**. The page shows a **Timeline** (queued,
+started, finished, duration), a **Details** card, and the **live log**: the full
+run log replays instantly, then streams in real time while the run is active.
+While the run is active, a **Cancel** button stops it (and force-kills it if it
+doesn't stop). The log viewer has the same controls described under *Container
+logs* below.
+
+The **Details** card shows the trigger, source, commit, message, committer,
+image tags and any error. It also shows:
+
+- **Run ID** — the run's global id. This is the `run_id` that webhooks and the
+  API return, and that status callbacks send. It is different from the
+  per-project `#number` in the page title.
+- **Status callback** — only on runs started by a webhook or the API. It shows
+  how the final report to the project's callback URL went: `pending`,
+  `delivered (HTTP 200)`, `failed (…)` with the HTTP code or connection error,
+  `skipped (no status callback URL set)`, or `not sent`. While the run is
+  active it reads `sending progress updates`. See
+  [Webhooks → Status callback](./webhooks.md).
+
+![screenshot: run detail page with the Run ID and Status callback rows](TODO)
 
 ## Container logs `/projects/<slug>/logs`
 
@@ -242,14 +439,17 @@ them. Both this page and the run log use the same viewer:
   a count. Click one to hide or show that level.
 - **Search** — type to highlight matches; the **↑ / ↓** buttons (or
   Enter / Shift+Enter) jump between them, with a `match / total` counter.
+- **Copy** — copy your selection, or the whole log if nothing is selected.
+- **Download** — save the full log as a file.
+- **Fullscreen** — the expand icon fills the screen with the log.
 - **Wrap** — toggle word-wrap for long lines.
 - **Clear** — empty the view to watch only new output.
 - **↓ Jump to latest** — appears when you scroll up; the view otherwise sticks
   to the newest line on its own.
 
 Very large logs stay fast — the viewer only draws the lines on screen and, once
-a log gets huge, drops the oldest lines (shown as a "*… earlier lines dropped*"
-marker at the top).
+a log gets huge, drops the oldest lines (shown as a "— *N* earlier lines
+dropped —" marker at the top).
 
 ## Terminals
 
@@ -259,75 +459,101 @@ browser — the same as typing in a real shell on the server.
 - **Server shell** `/terminal` — a shell on the **host** itself (the machine
   running the agent). Use it for quick checks and fixes without a separate
   SSH login.
-- **Container shell** `/projects/<slug>/terminal` — a shell **inside** one of
-  a project's running containers (like `docker exec`). Pick the container
-  from the list, then run commands inside it.
+- **Container shell** `/projects/<slug>/terminal` (the project's **Shell**
+  button) — a shell **inside** one of a project's running containers (like
+  `docker exec`). Pick it from the **Container** list, then run commands inside
+  it.
 
 Both are full terminals: colours, interactive programs and window-resize all
-work.
+work. If the connection drops, click **Reconnect**.
 
-The server shell is **sandboxed**: it runs as the agent's own (passwordless)
-user with the host filesystem mounted **read-only** apart from the agent's data
-dirs, so `sudo` can't authenticate and host files can't be edited from here. Use
-it for quick read-only checks and Docker commands (which need no `sudo`) — not
-general host administration.
+> **Important: this is root-level access.** The server shell runs as the
+> agent's own user (`ci-agent`). Plain `sudo` asks for a password, and that
+> account has none, so most `sudo` commands fail. But the account can still do
+> root-level things:
+>
+> - it is in the `docker` group, and Docker access is root-equivalent (for
+>   example `docker run --privileged`);
+> - it may run a few commands as root **without a password**: nginx test and
+>   reload, service controls, firewall commands, and the `ci-agent` program
+>   itself, which includes a helper that can read, write and delete any file.
+>
+> Treat the server shell like a root SSH login. Only give the admin password
+> and 2FA to people you would give root to.
 
-**Open host SSH session** — for privileged or filesystem-mutating work, the
+**Open host SSH session** — for normal admin work as **your own** account, the
 server shell's **Snippets** drawer has an **Open host SSH session** button at
 the top. It drops an `ssh <admin>@localhost` command at the prompt (the admin
-account is auto-detected) that logs you into a **real host session** via `sshd`,
-outside the sandbox — writable filesystem and full `sudo`. You authenticate with
-your own login password, so the privilege stays tied to a real account rather
-than the service. (First use trusts localhost's host key automatically, so you
-land straight on the password prompt. A *Permission denied* means a wrong
-password, or that this box accepts **SSH keys only** — enable
-`PasswordAuthentication` in `sshd`, or add a key for the agent account.) When
-`tmux` is installed the session is wrapped in a
-persistent `tmux` session, so a browser refresh, network drop, or interrupt only
-**detaches** it — your work keeps running and clicking the button again
-re-attaches.
+account is auto-detected). This logs you into a **real host session** via
+`sshd`, with full `sudo`. You type your own login password, so the work is tied
+to a real person's account rather than the service. (First use trusts
+localhost's host key automatically, so you land straight on the password
+prompt.) When `tmux` is installed, the session is wrapped in a persistent `tmux`
+session, so a browser refresh, network drop, or interrupt only **detaches** it —
+your work keeps running and clicking the button again re-attaches.
 
-> **Important:** although the shell itself is read-only, the agent's Docker
-> access is root-equivalent on the host (e.g. `docker run --privileged`). Treat
-> the server shell's reach as root SSH access regardless.
+**Copy a file into a container** — the **Copy file to container** card below
+the container shell pushes a file into a container.
 
-**Copy a file into a container** — below the container shell, a small form
-pushes a file into the selected container at a destination path (blank =
-`/tmp/`). The source is either a **file upload** from your browser or a **path
-on the host** (a file or directory the agent can read). Useful for dropping a
-config or a restore artifact next to a running app.
+1. Pick the **Container**.
+2. Pick the **Source**: **File upload** (choose a **File** from your computer)
+   or **Path on host** (type a **Host path** — a file or folder on the server).
+3. Type the **Destination** path inside the container (blank = `/tmp/`).
+4. Click **Copy into container**.
+
+Useful for dropping a config file or a restore file next to a running app.
 
 **Snippets** — a **Snippets** tab on the right edge of the shell pages keeps a
-list of reusable commands (an optional label plus the command), edited in place
-with autosave like [Notes](./ui.md). Hover or focus a snippet and hit
-**Paste** to drop its command into the live shell — it lands at the prompt
-**ready to run** rather than executing on its own, so you can review or tweak it
-first. Snippets are stored server-side and shared across both the server shell
-and every container shell.
+list of reusable commands (an optional label plus the command). Click **+ New
+snippet** to add one; it saves as you type, like *Notes* above. Hover or focus a
+snippet, then:
+
+- **Paste** — puts the command at the prompt **without running it**, so you can
+  check or change it first;
+- **Run** — puts the command at the prompt and presses Enter.
+
+Snippets are stored on the server and shared between the server shell and every
+container shell. The drawer also has a **Handy commands** list of common
+commands; click one to put it at the prompt (it won't run by itself).
+
+| Problem | Fix |
+|---|---|
+| `sudo` asks for a password and fails | The agent account has no password. Use **Open host SSH session** and log in as your own admin account. |
+| *Permission denied* after **Open host SSH session** | Wrong password, or the server only allows SSH keys. Enable `PasswordAuthentication` in `sshd`, or add a key for the agent account. |
+| The container shell says no containers were found | Deploy the project first. A container must be running to open a shell in it. |
 
 ## Files
 
 A point-and-click file manager — the same operations as the shell, without the
 typing. Two surfaces share one UI:
 
-- **Host files** `/files` — browse the **host filesystem** as the agent's user.
-  It only sees and changes what that user owns (the same trust level as the
-  server shell — treat it as root-equivalent).
-- **Container files** `/projects/<slug>/files` (the **Files** button on a
-  project, or the project shell page) — browse **inside** a container of the
-  project's stack, picked from a dropdown. Browsing needs a shell in the image,
-  so distroless / `scratch` containers show no listing.
+- **Host files** `/files` (sidebar **Files**) — browse the **host
+  filesystem**. It works as the agent's user first. When it hits a root-owned
+  file or folder, it automatically retries through the agent's **root** helper.
+  So it can read, edit and delete **any file on the server**. This is a
+  root-level tool — use it with the same care as a root shell.
+- **Container files** `/projects/<slug>/files` (the project's **Files**
+  button) — browse **inside** a container of the project's stack, picked from
+  the **Container** dropdown. Browsing needs a shell in the image, so distroless
+  / `scratch` containers show no listing.
 
-In either mode you can navigate directories, **download** a file to your
-browser, **upload** a file into the current directory, **edit** small text
-files inline, create folders, and rename or **delete** entries. Delete and
-overwrite are confirmed in the browser and recorded in the [audit log](./ui.md);
-deletes are recursive for folders, so double-check the path. Very large files
-should be moved over the shell rather than the inline editor (capped at 1 MB).
+In either mode you can:
+
+- move around with **↑ Up**, the path box and **Go**, or the breadcrumb;
+- **download** a file to your browser;
+- **Upload** a file into the current folder (a progress bar shows, with a ✕ to
+  cancel);
+- **edit** a small text file inline, then **Save** or **Cancel** (files up to
+  1 MB; move bigger files with the shell);
+- make a **New folder**, rename, or **delete** entries.
+
+Delete asks you to confirm first, and deletes folders **with everything inside
+them** — double-check the path. Changes are recorded in the audit log (see
+*Audit* below).
 
 ## Host `/host`
 
-Host-level controls in one place:
+The **Host controls** page puts host-level settings in one place:
 
 - **Services** — status plus restart / reload / log-tail buttons for `nginx`,
   the `docker` engine, and `ci-agent` itself. Restarting Docker bounces running
@@ -338,11 +564,14 @@ Host-level controls in one place:
   extra `location` directives) keep the core proxy generated so you can't lock
   yourself out. An **Advanced** section can replace the whole config verbatim —
   `nginx -t` catches syntax errors and rolls back, but a wrong `proxy_pass`
-  still passes the test and would cut off the panel, so a **Reset to default**
-  button and the SSH / loopback fallback are the recovery path.
+  still passes the test and would cut off the panel, so a **Reset to generated
+  default** button and the SSH / loopback fallback are the recovery path.
 - **Global nginx config** — an http-level snippet included before every site
   (`gzip`, `server_tokens off;`, a shared `limit_req_zone`, …). Server blocks
   belong to projects, not here.
+
+  Both nginx editors apply through the same safe path as the project nginx page
+  (write → `nginx -t` → reload, rolled back on a failed test).
 - **Direct port access** — an emergency switch to reach this panel straight by
   IP address and port, for when your domain or DNS is down. Normally the panel
   listens on loopback only and you reach it through nginx at your domain. Click
@@ -364,10 +593,6 @@ Host-level controls in one place:
   to bind a domain. The panel restarts (you are logged out), the firewall port
   opens, and the nginx site file is left in place for you to delete. The
   `ci-agent remove-domain` command does the same from the server shell.
-
-All three apply through the same safe path as the project nginx page
-(write → `nginx -t` → reload, rolled back on a failed test).
-
 - **nginx configs** — an inventory of every `.conf` file in
   `/etc/nginx/conf.d/`, with a status badge on each:
   - **ours** — a project's vhost or a ci-agent-managed file (the admin panel,
@@ -378,9 +603,24 @@ All three apply through the same safe path as the project nginx page
 
   Each row shows the file name, owner, the hostnames it serves, size and last
   modified. **Every** row has a **View** button that opens the file's on-disk
-  contents in a read-only modal. Only **unmanaged** files also get a **Delete
-  config** button (type-to-confirm); managed and default files can't be deleted
-  here, so you can't lock yourself out by accident.
+  contents in a read-only window. Only **unmanaged** files also get a **Delete**
+  button: type the file name and click **Delete config** to confirm. Managed and
+  default files can't be deleted here, so you can't lock yourself out by
+  accident. **Test config (nginx -t)** checks the whole nginx setup for errors
+  without changing anything.
+
+> **Common problem: "Privileged host actions are unavailable."** This yellow
+> banner on the Host and Firewall pages means the agent's sudo rules are not
+> loaded, so applying nginx config, controlling services and changing firewall
+> rules will fail. Fix it from an SSH session:
+>
+> ```
+> sudo /usr/bin/ci-agent reconcile-sudoers
+> ```
+>
+> If that logs *failed validation*, run
+> `sudo visudo -cf /usr/share/ci-agent/ci-agent.sudoers` to see the error. See
+> [Security](./security.md).
 
 ## Firewall `/firewall`
 
@@ -447,6 +687,11 @@ will free, the items affected, and a single button:
 - build workspaces (recreated on the next deploy)
 - old run logs & snapshots (trimmed to retention)
 - stale temp files left by interrupted update/restore uploads
+- **unused networks** (**Remove unused networks**) — Docker networks no
+  container is attached to, usually left over by deleted or stopped stacks.
+  Each one holds an address range from Docker's pool, so clearing them leaves
+  room for new deploys. Shared category networks are recreated on the next
+  deploy, so this is safe.
 
 Images belonging to the last *N* successful runs of every project (the
 **Redeployable runs / project** setting, default **1**) and project-data volumes
@@ -460,9 +705,11 @@ offered: the agent runs unprivileged — use the **Server shell** for that.
 
 ## Audit `/audit`
 
-Every admin action and accepted webhook: logins (and failures), project
-changes, token rotations, triggers, cancellations, prunes, settings changes.
-Changes made with an API key show the key as the actor (`api:<key name>`).
+The **Audit log** lists every admin action and accepted webhook, with its
+**Time**, **Actor**, **Action** and **Detail**: logins (and failures), project
+changes, token rotations, triggers, cancellations, prunes, file changes and
+settings changes. Changes made with an API key show the key as the actor
+(`api:<key name>`).
 
 ## API keys `/api-keys`
 
@@ -513,26 +760,29 @@ level can do** lists every API endpoint and the level it needs.
   - *Signed upload (offline)* — upload either the whole
     `ci-agent-offline-*.tar.gz` release bundle (the agent takes the `.deb` and
     its `.deb.asc` out of it; the bundle's own public key is ignored), **or**
-    the release `.deb` **and** its detached `.asc` signature directly. The agent
+    the release `.deb` **and** its detached `.asc` signature directly, then click
+    **Verify & stage update**. The agent
     verifies the signature **offline** against the
     embedded release key (pinned to fingerprint
     `A80F7309CF26133DBE88E2EC9C5489AAE86BF159`; any other key is rejected) and
     refuses downgrades, then **stages** the new binary. Click **Apply &
     restart** to install it: the service restarts and a privileged pre-start
     step swaps the binary in. If the new binary crash-loops it is automatically
-    rolled back to the previous one after three failed starts. A staged update
-    can be discarded until you apply it.
-- **Data dir** — a quick size breakdown of the data dir (database, run
-  snapshots, backups, workspaces, uploads) and free disk. The full storage
-  report and cleanup actions live on the [Storage](./ui.md) page.
-- **Backups** — create a backup on demand (`VACUUM INTO`, safe while runs are
-  active), download or delete existing backups. The nightly housekeeping
-  backup (keep 7) continues regardless.
-- **Restore** — upload a backup `.db`. It is validated and **staged**: the
-  swap happens at the next `systemctl restart ci-agent`, and the replaced
-  database is kept beside it as `ci-agent.db.pre-restore-<timestamp>`. A
-  staged restore can be cancelled until the restart. Note: encrypted env
-  vars also need the matching `secret.key`.
+    rolled back to the previous one after three failed starts. Until you apply
+    it, **Discard staged update** throws the staged update away.
+- **Storage** — a quick size breakdown of the data dir (database, run
+  snapshots, backups, workspaces, uploads) and **Free disk (data dir)**. The full
+  storage report and cleanup actions live on the **Storage** page (see
+  *Storage* above).
+- **Backups** — **Create backup now** makes a backup on demand (`VACUUM INTO`,
+  safe while runs are active). You can download or **delete** existing backups.
+  The nightly housekeeping backup (keep 7) continues regardless.
+- **Restore** — choose a backup `.db` and click **Stage restore**. It is
+  validated and **staged**: the swap happens at the next
+  `systemctl restart ci-agent`, and the replaced database is kept beside it as
+  `ci-agent.db.pre-restore-<timestamp>`. Until the restart, **Cancel staged
+  restore** undoes it. Note: encrypted env vars also need the matching
+  `secret.key`.
 - **Run housekeeping now** — triggers the nightly pass on demand.
 
 ## Git credentials `/git-credentials`
@@ -565,7 +815,7 @@ The Settings page collects everything you change from the UI:
   browser tab) and an optional **logo** (used as the sidebar mark and the
   favicon). Upload a PNG / SVG / JPEG / WebP / GIF / ICO up to 512 KB, or tick
   **Remove current logo** to go back to the default mark; click **Save**. See
-  [Branding](./ui.md) above.
+  *Branding* above.
 - **Change password** — current password, new password (8+ characters),
   confirm; click **Update password**. Changing it **signs out every other
   session** (you stay logged in on this browser).
@@ -594,6 +844,11 @@ The Settings page collects everything you change from the UI:
     (protected from cleanup); older ones are removed. Lower it to save the most
     disk (1 keeps only the version that's live now); raise it if you want to
     redeploy further back. Changing it takes effect on the next cleanup.
+  - **Parallel deploys** — a number from **1 to 16** (default **1**). How many
+    projects can build and deploy at the same time; runs of one project always
+    go one after another. 1 is safest on small servers; higher values use more
+    CPU, RAM and disk during builds. Takes effect **immediately**, no restart.
+    It overrides `max_concurrent_runs` from the config file.
 
   > **What this means.** Every deploy builds a new image, and these can be large.
   > Without cleanup they pile up and fill the disk. The keep count decides how
@@ -607,24 +862,28 @@ The Settings page collects everything you change from the UI:
   [Projects](./projects.md).
 - **Default subdomain** — set a global **base domain** here; each project port
   can then be reached at `<slug>.<base>` (a subdomain, on by default) and/or
-  `<base>/<slug>/` (an apex path, off by default), toggled per port on the
-  project's **Domains & Ports** tab. An optional **base path** here nests every
+  `<base>/<slug>/` (an apex path, off by default), toggled per port in the
+  **Ports** card on the project's **Settings** tab. An optional **base path** here nests every
   path route under a shared prefix (e.g. `/p` → `<base>/p/<slug>/`). A wildcard
-  cert for the zone, if present, auto-enables HTTPS for both. Blank disables them.
+  cert for the zone, if present, auto-enables HTTPS for both (get one on the
+  **Certificates** page — see *Certificates* above). Blank disables them.
   Setting the base domain to the **same hostname as the admin panel** turns on
   single-domain mode — the panel stays at `<domain>/` and projects sit under the
   base path (which is then required). See [Domains & TLS](./domains.md).
-- **Failed-deployment email alerts** — send an email whenever a deploy fails.
+- **Failed-deployment email alerts** — send an email whenever a deploy fails,
+  and when a project's health check goes down or recovers (health emails go to
+  the admin only).
   Fill in the **admin email**, **SMTP host** and **port**, the **security** mode
   (*STARTTLS (587)*, *Implicit TLS (465)*, or *None (25)*), optional **username**
   and **password**, and a **From** address. Click **Save**, or **Save & send
   test** to fire a test email right away. When a real deploy fails, the agent
   emails both the admin and the commit's committer. See
   [Operations](./operations.md).
-- **Effective configuration** — the operational knobs (concurrency, timeouts,
-  retention, pull policy…) shown **read-only**. They live in
-  `/etc/ci-agent/config.toml`, the single source of truth; edit the file and
-  restart the service to change them.
+- **Effective configuration** — the operational knobs (listen address, data
+  dir, concurrency, timeouts, disk and ZIP limits, pull policy, hooks) shown
+  **read-only**. Most live in `/etc/ci-agent/config.toml`; edit the file and
+  restart the service to change them. **Max concurrent runs** is the exception:
+  it shows the live value, which you change with **Parallel deploys** above.
 
 > **What this means.** *SMTP* is the standard way programs send email. You point
 > the agent at a mail server (your own internal relay, or any SMTP server it can

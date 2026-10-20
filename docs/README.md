@@ -15,7 +15,7 @@ nginx.
 4. Deploys with `docker compose up -d`, health-gates the result, and
    automatically rolls back to the last good version on failure.
 5. Manages each project's nginx server block and TLS — multiple domains with a
-   canonical 301, per-domain HTTPS, and certificates from an internal CA,
+   primary domain that the others 301-redirect to, per-domain HTTPS, and certificates from an internal CA,
    self-signed, uploaded, or Let's Encrypt.
 6. Serves this admin UI: running jobs, deployment history, live run and
    container logs, redeploy, Docker cleanup tools, server resource gauges, and
@@ -28,8 +28,8 @@ nginx.
 | Footprint | one ~6 MB fully-static binary, embedded SQLite, no external services |
 | Pipeline | convention over configuration: the compose file *is* the pipeline |
 | Concurrency | serial per project, capped across projects |
-| Offline | nothing is pulled by default (`pull_policy = "never"`); no CDN, no telemetry |
-| Proxy | plain host nginx, configured once per project by you (the UI generates the commands) |
+| Offline | works with no internet: each deploy tries to pull newer images and quietly uses the local ones when it can't; no CDN, no telemetry |
+| Proxy | plain host nginx; the UI generates each project's server block and can apply it in one click (or shows the commands to run yourself) |
 | Distribution | signed apt repository (`apt-get upgrade` keeps it current) or a `.deb`/binary you transfer by hand; built automatically from every commit |
 | Updates | apt, the Maintenance page's built-in self-update, or scp — your choice |
 
@@ -40,7 +40,7 @@ nginx.
 - **[Installation](./install.md)** — get it running in five minutes.
 - **[Admin UI guide](./ui.md)** — a tour of every page in the panel.
 - **[Project conventions](./projects.md)** — what a deployable repo must look like.
-- **[Webhooks](./webhooks.md)** — trigger deployments from anywhere.
+- **[Webhooks](./webhooks.md)** — trigger deployments from anywhere, and get each run's status sent back to your own URL.
 - **[API & AI agents](./api.md)** — API keys for scripts and AI agents.
 - **[Domains & TLS](./domains.md)** — multiple domains, nginx, certificates.
 - **[Reverse tunnel](./tunnel.md)** — serve a NAT'd box through a public one.

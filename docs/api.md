@@ -8,12 +8,15 @@ variables, and deploy. You decide how much each key can do.
 ## Quick start
 
 1. In the admin panel, open **API keys** (in the sidebar).
-2. Under **Create key**, type a name (for example `claude-ops`), pick an
-   **access level** and an expiry, then click **Create key**.
-3. Copy the key. **It is shown only once.** The page also shows a
+2. Under **Create key**, fill in **Name** (for example `claude-ops`). A name
+   has 1–40 characters: letters, digits, spaces, `_`, `.` or `-`. Each name
+   must be unique.
+3. Pick an **Access level** and when the key **Expires**, then click
+   **Create key**.
+4. Copy the key. **It is shown only once.** The page also shows a
    **Prompt for your AI agent**. Paste that prompt into your agent. It contains
    the key, the API address and links to these docs.
-4. Test it:
+5. Test it:
 
 ```bash
 curl -H 'Authorization: Bearer cia_…' https://ci.example.com/api/v1
@@ -21,6 +24,19 @@ curl -H 'Authorization: Bearer cia_…' https://ci.example.com/api/v1
 
 The answer lists your key's level, every endpoint, whether your key may use
 it, and where the docs are.
+
+The **Connect an AI agent** card at the bottom of the page has the same prompt
+with placeholders. Use it if you want to fill in the key yourself.
+
+![screenshot: API keys page with the Keys table, the Create key form and the Connect an AI agent card](TODO)
+
+### Revoke or delete a key
+
+1. In the **Keys** table, click **Revoke** next to the key. Anything that uses
+   it stops working at once.
+2. Optional: click **Delete** to remove the key from the list. Its audit
+   entries stay. **Delete** only shows for revoked or expired keys, so an
+   active key must be revoked first.
 
 ## For AI agents: how to start
 
@@ -31,7 +47,9 @@ If you are an AI agent and a human gave you a ci-agent key, do this:
 2. Read this guide as Markdown at `GET /api/v1/docs` (needs the key) or on the
    public site: https://m-hoseinzadeh.github.io/ci-agent-apt/docs/api.html
 3. Deploys are **asynchronous**. A deploy call returns a queued run right away.
-   Poll the run until its `status` is `success`, `failed` or `cancelled`.
+   Poll the run until its `status` is no longer `queued`, `fetching`,
+   `building`, `testing` or `deploying`. The final status is `success`,
+   `failed`, `timeout`, `interrupted` or `cancelled`.
 4. To find a bug, read logs first: the run log (build and deploy output), then
    the container logs (the running app). Change things only after that.
 5. Ask the human before you delete or archive a project, or run commands inside
@@ -97,10 +115,12 @@ Good to know:
 |---|---|
 | 401 | No key, wrong key, revoked key or expired key (`missing_key`, `invalid_key`, `revoked_key`, `expired_key`). |
 | 403 | The key's level is too low (`insufficient_level`; the error shows `required_level` and `your_level`). |
-| 404 | No such project, run, container or endpoint. |
-| 409 | Conflict, e.g. `slug_taken`, `deploys_paused`, `run_active`, `nothing_deployed`. |
+| 404 | No such project, run, container or endpoint (`not_found`). |
+| 409 | Conflict: `slug_taken`, `deploys_paused`, `run_active`, `nothing_deployed`, `no_containers`, or `conflict` (for example a service name that clashes with another project in the same category). |
 | 422 | The request is invalid (`invalid_request`); the message says what to fix. |
-| 429 | Too many wrong keys from your address (wait a minute), or another `exec` is still running. |
+| 429 | `too_many_failures`: too many wrong keys from your address. `exec_busy`: another `exec` is still running. The answer has a `Retry-After: 60` header. |
+| 500 | `internal`: something failed on the server. Details are in the ci-agent log. |
+| 504 | `timeout`: reading container logs took too long. Lower `tail` or set `since`. |
 
 ## Read endpoints (`read` level)
 
@@ -117,17 +137,28 @@ Good to know:
   run. Add `?archived=true` to include archived projects.
 - `GET /api/v1/projects/{slug}` — one project: git URL and branch, mode, ports,
   services, domains, health and last run. Operator and admin keys also get
-  `compose_inline`.
+  `compose_inline`, `status_callback_url` and `status_callback_token_set`
+  (`true`/`false` — the token itself is never returned).
 
 ### Runs and build logs
 
 - `GET /api/v1/projects/{slug}/runs` — recent runs (`?limit=20`, at most 200).
-- `GET /api/v1/projects/{slug}/runs/{number}` — one run: status, trigger,
-  commit, times and `error`.
+- `GET /api/v1/projects/{slug}/runs/{number}` — one run. Fields:
+  - `id` (global) and `number` (per project), `project` (the slug)
+  - `status`, `trigger`, `source_ref` (what was deployed), `commit_sha`,
+    `commit_message`, `image_tags`
+  - `queued_at`, `started_at`, `finished_at`, `error`
+  - `callback`: `requested` (whether this run reports to the status
+    callback), `state` (`pending`, `delivered`, `failed`, `skipped`, or `null`
+    while the run is still going) and `detail` (for example `HTTP 200`)
+  - `links`: `self` and `log`, the API paths of this run and its log
 - `GET /api/v1/projects/{slug}/runs/{number}/log` — the end of the run's build
-  and deploy log (`?tail=500` lines, at most 5000).
-- `GET /api/v1/runs` — recent runs of all projects (`?limit=50`), or only the
-  queued and running ones with `?active=true`.
+  and deploy log (`?tail=500` lines, at most 5000). The answer has the `run`,
+  its `lines` and `truncated`. Only the last 512 KB of the log file is read.
+  A run with no log (not started yet, or removed by log retention) gives 404.
+- `GET /api/v1/runs` — recent runs of all projects (`?limit=50`, at most 500).
+  With `?active=true` you get only the queued and running runs, and `limit` is
+  ignored.
 - `GET /api/v1/runs/{id}` — one run by its global id.
 
 ### Containers and app logs
@@ -136,7 +167,9 @@ Good to know:
   service name, state, CPU and memory.
 - `GET /api/v1/projects/{slug}/logs` — the end of the containers' logs.
   Options: `?service=web` (one service), `?tail=200` (at most 2000),
-  `?since=10m` (`30s`, `10m`, `2h`, `1d`).
+  `?since=10m` (`30s`, `10m`, `2h`, `1d`). The answer has `lines`,
+  `truncated` and `stderr`. Output is cut at 1 MB. If reading takes more than
+  15 seconds you get 504 `timeout`; lower `tail` or set `since`.
 
 Example: why did the last deploy of `shop` fail?
 
@@ -161,12 +194,14 @@ curl -H "Authorization: Bearer $KEY" "$API/projects/shop/logs?tail=100&since=30m
 | `git_branch` | no | defaults to `main` |
 | `compose_path` | no | compose mode, default `docker-compose.yml` |
 | `dockerfile_path` | no | dockerfile mode, default `Dockerfile` |
-| `working_dir` | no | sub-folder of the repo to build in (monorepos) |
+| `working_dir` | no | sub-folder of the repo to build in (monorepos); compose and dockerfile modes only |
 | `image_ref` | image mode | e.g. `nginx:1.27` |
 | `compose_inline` | inline mode | the full docker-compose.yml text; **admin only** |
-| `http_port`, `container_port` | no | host port and app port |
+| `http_port` | no | host port |
+| `container_port` | no | app port inside the container; dockerfile and image modes only (ignored for compose and inline) |
 | `category` | no | `"a,b"` or `["a","b"]` — shared Docker networks; **admin only** |
 | `env` | no | `{"KEY": "value"}` |
+| `status_callback_url`, `status_callback_token` | no | where to send this project's [status callback](./webhooks.md) reports; set before the first deploy, so a `deploy: true` run is reported too; **admin only** |
 | `deploy` | no | `true` = deploy right after creating |
 
 With an **operator** key, create an image-mode project:
@@ -196,8 +231,21 @@ queued `run`. A compose or dockerfile project needs a `git_url` to use
   want to change: `name`, `mode`, `category`, `git_url`, `git_branch`,
   `compose_path`, `dockerfile_path`, `working_dir`, `image_ref`,
   `compose_inline`, `run_timeout_s` (seconds, at most 86400; `0` = server
-  default). `git_url`, `compose_inline` and `category` need an admin key.
-  Ports and domains are changed in the admin panel.
+  default), `status_callback_url` and `status_callback_token` (an empty string
+  clears them). `git_url`, `compose_inline`, `category` and the two
+  `status_callback_*` fields need an admin key. Ports and domains are changed
+  in the admin panel. The answer holds the updated `project` and a `note`: a
+  short text that starts with `Saved` and says what else happened.
+
+  Example — report this project's API and webhook deploys to your CD system:
+
+  ```bash
+  curl -X PATCH -H "Authorization: Bearer $KEY" \
+    -H 'Content-Type: application/json' \
+    -d '{"status_callback_url":"https://cd.example.internal/ci-agent/status",
+         "status_callback_token":"<shared secret>"}' \
+    "$API/projects/my-app"
+  ```
 
 ### Environment variables
 
@@ -216,8 +264,12 @@ a placeholder).
 
 If the values changed, ci-agent applies them to the running app (it recreates
 the containers, or rebuilds a Dockerfile project). The answer's `applied` field
-says what happened. Add `?apply=false` to only save them; the next deploy uses
-them.
+is a short text that says what happened (or `null`). Add `?apply=false` to only
+save them; the next deploy uses them.
+
+The run that applies the change is **not** reported to the status callback,
+and the answer has no run id. To follow it, list the runs with
+`GET /api/v1/projects/{slug}/runs?limit=1`.
 
 ### Deploy
 
@@ -233,9 +285,25 @@ them.
   running run.
 
 Deploy calls answer **202** with the queued `run`. Poll
-`GET /api/v1/projects/{slug}/runs/{number}` until `status` is `success`,
-`failed` or `cancelled`. If deploys are paused for the project, they return 409
-`deploys_paused`. Send `{"force": true}` to deploy anyway.
+`GET /api/v1/projects/{slug}/runs/{number}` until `status` is no longer
+`queued`, `fetching`, `building`, `testing` or `deploying`.
+
+If deploys are paused for the project, deploy, redeploy and recreate return
+409 `deploys_paused`. Send `{"force": true}` to deploy anyway.
+
+API deploys never replace each other in the queue. Only webhook runs do that
+(see [Webhooks](./webhooks.md)).
+
+Instead of polling, set a **status callback** on the project. Then these runs
+POST each status change to your URL, with `run_id` = the run's `id`:
+
+- runs started by deploy, redeploy and recreate, and by create with
+  `deploy: true`;
+- runs started by the project's webhook URLs.
+
+Runs started by an env change (`PUT`/`PATCH .../env`), from the admin panel,
+or by auto-redeploy are **not** reported. See
+[Webhooks → Status callback](/docs/webhooks#status-callback).
 
 ### Containers
 
@@ -243,7 +311,8 @@ Deploy calls answer **202** with the queued `run`. Poll
   `stop`, `restart`, `pause` or `unpause`. `name` is a container name from
   `/containers`.
 - `POST /api/v1/projects/{slug}/pause-deploys` — `{"paused": true}` stops
-  webhook deploys; `{"paused": false}` turns them back on.
+  webhook deploys, and API deploys then need `"force": true`;
+  `{"paused": false}` turns them back on.
 
 ## Admin endpoints (`admin` level)
 
@@ -251,7 +320,9 @@ Deploy calls answer **202** with the queued `run`. Poll
 - `DELETE /api/v1/projects/{slug}` — deletes the project **and all its data**
   (containers, volumes, images). You must repeat the slug:
   `DELETE /api/v1/projects/shop?confirm=shop`. Not possible while a deploy is
-  running.
+  running (409 `run_active`). The answer is `{"deleted": true, "had_errors": …}`.
+  `had_errors` is `true` when some cleanup step failed; check the ci-agent
+  log.
 - `POST /api/v1/projects/{slug}/exec` — run one command inside a container:
 
 ```json
@@ -260,10 +331,13 @@ Deploy calls answer **202** with the queued `run`. Poll
 
   Pick the container with `service` or `container`. A project with only one
   container needs neither. `timeout_s` is 1–120 (default 30). The answer has
-  `exit_code`, `stdout`, `stderr` (each cut at 64 KB) and `timed_out`. This is
-  not an interactive shell, and only two commands can run at a time.
+  `container`, `exit_code`, `ok` (`true` when the exit code is 0), `stdout`
+  and `stderr` (each cut at 64 KB), `stdout_truncated`, `stderr_truncated` and
+  `timed_out`. This is not an interactive shell. Only two commands can run at
+  a time; a third gets 429 `exec_busy`.
 - `POST /api/v1/projects/{slug}/rotate-webhook` — make new webhook URLs. The old
-  ones stop working.
+  ones stop working. The answer has the new URLs in `webhook_git` and
+  `webhook_zip`.
 - `GET /api/v1/audit` — the latest audit log entries (`?limit=100`).
 
 ## Old endpoints
@@ -293,6 +367,11 @@ as before:
   and debug.
 - Container logs are not filtered, so a read key can see anything your app
   prints there.
+- `status_callback_url` decides where the agent sends HTTP requests, so only
+  admin keys can set it.
+- A project's **webhook URL** is as powerful as an admin key for that project.
+  Whoever has it can pass their own `git_url` or `zip_url` and deploy any code.
+  Keep it as secret as an admin key, and rotate it if it leaks.
 - After 10 wrong keys in a minute, an address is blocked for a minute. All
   programs on the server itself share the address `127.0.0.1`, so one script
   with a wrong key can briefly block the others.
