@@ -160,6 +160,9 @@ Good to know:
   With `?active=true` you get only the queued and running runs, and `limit` is
   ignored.
 - `GET /api/v1/runs/{id}` — one run by its global id.
+- `GET /api/v1/projects/{slug}/domains` — the project's domains: `id`,
+  `domain`, `canonical`, `tls`, `port_id` (`null` = the primary HTTP port) and
+  `maintenance`.
 
 ### Containers and app logs
 
@@ -233,8 +236,8 @@ queued `run`. A compose or dockerfile project needs a `git_url` to use
   `compose_inline`, `run_timeout_s` (seconds, at most 86400; `0` = server
   default), `status_callback_url` and `status_callback_token` (an empty string
   clears them). `git_url`, `compose_inline`, `category` and the two
-  `status_callback_*` fields need an admin key. Ports and domains are changed
-  in the admin panel. The answer holds the updated `project` and a `note`: a
+  `status_callback_*` fields need an admin key. Ports are changed in the
+  admin panel; domains with the [domain endpoints](#domains) below. The answer holds the updated `project` and a `note`: a
   short text that starts with `Saved` and says what else happened.
 
   Example — report this project's API and webhook deploys to your CD system:
@@ -335,10 +338,36 @@ or by auto-redeploy are **not** reported. See
   and `stderr` (each cut at 64 KB), `stdout_truncated`, `stderr_truncated` and
   `timed_out`. This is not an interactive shell. Only two commands can run at
   a time; a third gets 429 `exec_busy`.
+- `POST /api/v1/projects/{slug}/domains` — add a domain (see [Domains](#domains)).
+- `DELETE /api/v1/projects/{slug}/domains/{id}` — delete a domain.
 - `POST /api/v1/projects/{slug}/rotate-webhook` — make new webhook URLs. The old
   ones stop working. The answer has the new URLs in `webhook_git` and
   `webhook_zip`.
 - `GET /api/v1/audit` — the latest audit log entries (`?limit=100`).
+
+### Domains
+
+A domain decides which hostnames nginx sends to a project, so adding and
+deleting need an **admin** key. They do the same checks as the **Domains**
+tab and apply nginx right away:
+
+- `POST /api/v1/projects/{slug}/domains` with `{"domain": "app.example.com"}`.
+  Add `"port_id": <id>` to bind it to one of the project's extra ports instead
+  of its primary HTTP port. The hostname must be a bare, valid name; it may not
+  be the admin panel's own domain, another project's domain (409 `conflict`)
+  or a host routed to a tunnel. The new domain is not primary, so it serves the
+  app directly. The answer (status 201) has the new `domain` and `nginx`, a
+  short text that says how the nginx update went.
+- `DELETE /api/v1/projects/{slug}/domains/{id}` — the `id` comes from
+  `GET .../domains`. The answer has `deleted`, `was_canonical` (redirects to it
+  are now off) and `nginx`.
+
+Primary domains, HTTPS and certificates are still set in the admin panel.
+
+```bash
+curl -X POST -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
+  -d '{"domain":"shop.example.com"}' "$API/projects/shop/domains"
+```
 
 ## Old endpoints
 
