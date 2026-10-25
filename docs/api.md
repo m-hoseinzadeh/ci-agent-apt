@@ -339,6 +339,7 @@ or by auto-redeploy are **not** reported. See
   `timed_out`. This is not an interactive shell. Only two commands can run at
   a time; a third gets 429 `exec_busy`.
 - `POST /api/v1/projects/{slug}/domains` — add a domain (see [Domains](#domains)).
+- `PATCH /api/v1/projects/{slug}/domains/{id}` — turn HTTPS on or off.
 - `DELETE /api/v1/projects/{slug}/domains/{id}` — delete a domain.
 - `POST /api/v1/projects/{slug}/rotate-webhook` — make new webhook URLs. The old
   ones stop working. The answer has the new URLs in `webhook_git` and
@@ -356,13 +357,19 @@ tab and apply nginx right away:
   of its primary HTTP port. The hostname must be a bare, valid name; it may not
   be the admin panel's own domain, another project's domain (409 `conflict`)
   or a host routed to a tunnel. The new domain is not primary, so it serves the
-  app directly. The answer (status 201) has the new `domain` and `nginx`, a
-  short text that says how the nginx update went.
+  app directly. Add `"tls": true` to serve it over HTTPS at once; that needs a
+  certificate that already covers the hostname (a wildcard for its zone or one
+  named for it), otherwise the answer is 422 and nothing is added. The answer
+  (status 201) has the new `domain` and `nginx`, a short text that says how the
+  nginx update went.
+- `PATCH /api/v1/projects/{slug}/domains/{id}` with `{"tls": true}` or
+  `{"tls": false}` — switch HTTPS for an existing domain, with the same
+  certificate check. The answer has the updated `domain` and `nginx`.
 - `DELETE /api/v1/projects/{slug}/domains/{id}` — the `id` comes from
   `GET .../domains`. The answer has `deleted`, `was_canonical` (redirects to it
   are now off) and `nginx`.
 
-Primary domains, HTTPS and certificates are still set in the admin panel.
+Primary domains and certificates are still managed in the admin panel.
 
 ```bash
 curl -X POST -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
