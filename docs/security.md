@@ -91,7 +91,9 @@ The **automation API** (`/api/*`) only accepts **API keys** created on the
   an inline compose file, or a project's categories (which decide which other
   projects it can reach). A compose file can ask for a privileged container or
   mount host folders, so an admin key means **full access to the server**.
-  Admin keys can also delete projects and run commands inside containers.
+  Admin keys can also delete projects, run commands inside containers, and
+  change domains, certificates and nginx settings, including raw nginx
+  directives.
 - **Operator** keys deploy only what an admin set up, plus image-mode projects
   (whose compose file ci-agent writes itself). Use **read** keys for agents
   that only need to look.

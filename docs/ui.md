@@ -721,8 +721,9 @@ API keys let scripts and AI agents use this server through the
   environment variables, deploy, cancel, and start/stop/restart containers. It
   can't choose a git repository, zip URL, inline compose file or category.
 - **Admin** — operator, plus choose those sources, archive and delete
-  projects, run commands inside containers, and read the audit log. An admin
-  key means full access to the server.
+  projects, run commands inside containers, manage domains, certificates,
+  default URLs and proxy tuning, and read the audit log. An admin key means
+  full access to the server.
 
 To create a key, fill in **Create key** (a name, the level and when it
 expires) and click **Create key**. The page then shows the key **once**, with a

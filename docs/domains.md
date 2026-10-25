@@ -387,6 +387,22 @@ For those manual certificates, ci-agent also sends a `cert_expiring` alert (once
 per expiry date) when one enters the 30-day window. Set up the alert hook as
 described in the **Notifications** section of [Operations](./operations.md).
 
+## With the API
+
+An **admin** API key can do most of this page without the panel (see
+[API & AI agents](./api.md)):
+
+| In the panel | With the API |
+|---|---|
+| **Add domain**, **×** on the Domains tab | `POST` and `DELETE /api/v1/projects/{slug}/domains…` |
+| **Serve HTTPS** switch | `PATCH /api/v1/projects/{slug}/domains/{id}` with `{"tls": true}` |
+| **Issue a certificate** card: Let's Encrypt HTTP-01, Internal CA, Self-signed, Upload | `POST /api/v1/projects/{slug}/domains/{id}/certificate` |
+| **Default URL** column (Subdomain, Path) of the Ports card | `PATCH /api/v1/projects/{slug}/ports/{port}` with `subdomain` / `path` |
+| **Proxy tuning** panel | `PATCH /api/v1/projects/{slug}/ports/{port}` with `nginx` |
+
+Picking the **Primary** domain, Let's Encrypt wildcards (DNS-01), the
+Certificates page, and adding or removing ports stay in the panel.
+
 ## The admin panel's own TLS
 
 The steps above cover your *projects*. Once a domain is bound, the admin panel

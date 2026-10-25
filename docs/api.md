@@ -69,7 +69,7 @@ Each key has one level. A higher level can do everything a lower level can.
 |---|---|
 | `read` | See projects, runs, build logs, container logs, containers and health. |
 | `operator` | Everything in `read`, plus: create image-mode projects, edit projects, read and change environment variables, deploy, redeploy, cancel, recreate, start/stop/restart containers, pause deploys. Works with the source an admin set up; it **cannot** choose a git repository, zip URL, inline compose file or category. |
-| `admin` | Everything in `operator`, plus: choose git repositories, zip URLs, inline compose files and categories; archive and delete projects; run commands inside containers; read the audit log; rotate webhook tokens. |
+| `admin` | Everything in `operator`, plus: choose git repositories, zip URLs, inline compose files and categories; archive and delete projects; run commands inside containers; manage domains, certificates, default URLs and proxy tuning; read the audit log; rotate webhook tokens. |
 
 **Why operator keys can't choose the source:** a compose file or repository
 decides what runs, and a compose file can ask for a privileged container or
@@ -161,8 +161,15 @@ Good to know:
   ignored.
 - `GET /api/v1/runs/{id}` — one run by its global id.
 - `GET /api/v1/projects/{slug}/domains` — the project's domains: `id`,
-  `domain`, `canonical`, `tls`, `port_id` (`null` = the primary HTTP port) and
-  `maintenance`.
+  `domain`, `canonical`, `tls`, `port_id` (`null` = the primary HTTP port),
+  `maintenance` and `certificate`: the stored certificate that covers the
+  domain (`name`, `source`, `wildcard`, `challenge`, `not_after`), or `null`.
+- `GET /api/v1/projects/{slug}/ports` — the project's ports: the primary HTTP
+  port (`"id": "primary"`) and each extra port, with `slug`, `host_port`,
+  `container_port`, `label`, `service`, its default URLs (`subdomain`, `path`:
+  on or off) and its proxy tuning (`nginx`: `max_body_mb`, `proxy_timeout_s`,
+  `websockets`, `extra`). A read key sees `extra_set` (`true`/`false`) instead
+  of the `extra` directives.
 
 ### Containers and app logs
 
@@ -236,8 +243,9 @@ queued `run`. A compose or dockerfile project needs a `git_url` to use
   `compose_inline`, `run_timeout_s` (seconds, at most 86400; `0` = server
   default), `status_callback_url` and `status_callback_token` (an empty string
   clears them). `git_url`, `compose_inline`, `category` and the two
-  `status_callback_*` fields need an admin key. Ports are changed in the
-  admin panel; domains with the [domain endpoints](#domains) below. The answer holds the updated `project` and a `note`: a
+  `status_callback_*` fields need an admin key. Ports are added and removed
+  in the admin panel; their default URLs and proxy tuning change with the
+  [port endpoints](#ports), and domains with the [domain endpoints](#domains). The answer holds the updated `project` and a `note`: a
   short text that starts with `Saved` and says what else happened.
 
   Example — report this project's API and webhook deploys to your CD system:
@@ -341,6 +349,10 @@ or by auto-redeploy are **not** reported. See
 - `POST /api/v1/projects/{slug}/domains` — add a domain (see [Domains](#domains)).
 - `PATCH /api/v1/projects/{slug}/domains/{id}` — turn HTTPS on or off.
 - `DELETE /api/v1/projects/{slug}/domains/{id}` — delete a domain.
+- `POST /api/v1/projects/{slug}/domains/{id}/certificate` — get a certificate
+  for a domain (see [Domains](#domains)).
+- `PATCH /api/v1/projects/{slug}/ports/{port}` — change a port's default URLs
+  or proxy tuning (see [Ports](#ports)).
 - `POST /api/v1/projects/{slug}/rotate-webhook` — make new webhook URLs. The old
   ones stop working. The answer has the new URLs in `webhook_git` and
   `webhook_zip`.
@@ -368,12 +380,65 @@ tab and apply nginx right away:
 - `DELETE /api/v1/projects/{slug}/domains/{id}` — the `id` comes from
   `GET .../domains`. The answer has `deleted`, `was_canonical` (redirects to it
   are now off) and `nginx`.
+- `POST /api/v1/projects/{slug}/domains/{id}/certificate` — get a certificate
+  for the domain, as the **Issue a certificate** card on the domain's SSL page
+  does, then switch HTTPS on. Fields (all optional):
 
-Primary domains and certificates are still managed in the admin panel.
+  | Field | Meaning |
+  |---|---|
+  | `source` | `letsencrypt` (default), `internal_ca`, `self_signed` or `upload` |
+  | `scope` | `single` or `wildcard`, for the other sources. Blank: the zone's apex gets a wildcard, a subdomain a cert of its own. Let's Encrypt always makes a cert for this one host (HTTP-01). |
+  | `tls` | `false` stores the certificate but leaves HTTPS off; switch it on later with `PATCH .../domains/{id}` |
+  | `cert_pem`, `key_pem` | for `upload`: the full chain and the private key |
+
+  Let's Encrypt checks the domain over plain HTTP on port 80, so its DNS must
+  already point at this server (directly or through a CDN that forwards
+  `/.well-known/acme-challenge/`). The call waits for Let's Encrypt, which
+  often takes 10–60 seconds. The answer (status 201) has the updated `domain`,
+  the `certificate` (`name`, `wildcard`, `not_after`) and `nginx`. If Let's
+  Encrypt refuses, the answer is 422 with its reason, and nothing changes.
+
+  **Behind a CDN:** with HTTPS on, nginx redirects plain HTTP to HTTPS. If the
+  CDN reaches this server over plain HTTP, that becomes a redirect loop. Send
+  `"tls": false`, switch the CDN to HTTPS towards the server, then turn HTTPS
+  on with `PATCH .../domains/{id}`.
+
+The primary domain, wildcard certificates from Let's Encrypt (DNS-01) and the
+Let's Encrypt account settings are still managed in the admin panel.
 
 ```bash
 curl -X POST -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
   -d '{"domain":"shop.example.com"}' "$API/projects/shop/domains"
+curl -X POST -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
+  -d '{"source":"letsencrypt"}' "$API/projects/shop/domains/12/certificate"
+```
+
+### Ports
+
+Each port has default URLs and proxy tuning, as on the **Ports** card of the
+**Settings** tab and the **Proxy tuning** panel of the **Domains** tab. They
+change nginx, so they need an **admin** key.
+
+- `PATCH /api/v1/projects/{slug}/ports/{port}` — `{port}` is `primary` (the
+  project's HTTP port) or an extra port's `id` from `GET .../ports`. Send only
+  what you want to change:
+
+  | Field | Meaning |
+  |---|---|
+  | `subdomain` | `true`/`false`: the default subdomain `<slug>.<base domain>` |
+  | `path` | `true`/`false`: the default path `<base domain>/<slug>/`. Turning it on is refused when another project uses that path (409 `conflict`), when the port has no HTTP port, or in single-domain mode without a base path (422). |
+  | `nginx` | proxy tuning: `max_body_mb` (largest upload in MB), `proxy_timeout_s` (1–86400), `websockets` (`true` forwards WebSocket and SSE upgrades), `extra` (raw lines added to the proxy `location` block). Fields you leave out stay as they are; `null` goes back to nginx's default. |
+
+  Everything is checked before anything changes. The answer has the updated
+  `port` (as in `GET .../ports`) and `nginx`, a short text that says how the
+  nginx update went. As in the panel, the new values are saved even when
+  nginx refuses them (for example a typo in `extra`): the note then starts with
+  `nginx apply failed`, nginx keeps its previous config, and you can send a
+  fix.
+
+```bash
+curl -X PATCH -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
+  -d '{"subdomain":false,"nginx":{"websockets":true}}' "$API/projects/shop/ports/primary"
 ```
 
 ## Old endpoints
