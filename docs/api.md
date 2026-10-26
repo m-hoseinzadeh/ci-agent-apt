@@ -136,7 +136,7 @@ Good to know:
 - `GET /api/v1/projects` — all projects with their mode, categories and last
   run. Add `?archived=true` to include archived projects.
 - `GET /api/v1/projects/{slug}` — one project: git URL and branch, mode, ports,
-  services, domains, health and last run. Operator and admin keys also get
+  services, domains, watch paths, health and last run. Operator and admin keys also get
   `compose_inline`, `status_callback_url` and `status_callback_token_set`
   (`true`/`false` — the token itself is never returned).
 
@@ -212,6 +212,7 @@ curl -H "Authorization: Bearer $KEY" "$API/projects/shop/logs?tail=100&since=30m
 | `category` | no | `"a,b"` or `["a","b"]` — shared Docker networks; **admin only** |
 | `env` | no | `{"KEY": "value"}` |
 | `status_callback_url`, `status_callback_token` | no | where to send this project's [status callback](./webhooks.md) reports; set before the first deploy, so a `deploy: true` run is reported too; **admin only** |
+| `watch_paths` | no | `["services/wallet/**", "Dockerfile"]` (or one pattern per line): a git push deploys only when it changed a matching file. See [Webhooks](./webhooks.md) |
 | `deploy` | no | `true` = deploy right after creating |
 
 With an **operator** key, create an image-mode project:
@@ -242,7 +243,7 @@ queued `run`. A compose or dockerfile project needs a `git_url` to use
   `compose_path`, `dockerfile_path`, `working_dir`, `image_ref`,
   `compose_inline`, `run_timeout_s` (seconds, at most 86400; `0` = server
   default), `status_callback_url` and `status_callback_token` (an empty string
-  clears them). `git_url`, `compose_inline`, `category` and the two
+  clears them), `watch_paths` (`[]` clears them: every push deploys again). `git_url`, `compose_inline`, `category` and the two
   `status_callback_*` fields need an admin key. Ports are added and removed
   in the admin panel; their default URLs and proxy tuning change with the
   [port endpoints](#ports), and domains with the [domain endpoints](#domains). The answer holds the updated `project` and a `note`: a

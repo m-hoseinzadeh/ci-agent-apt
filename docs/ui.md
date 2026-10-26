@@ -203,6 +203,7 @@ own button:
   directory**, **Build from**, the mode's path or image, **Compose file**, **Run
   timeout (s)**, **Env vars**) — click **Save**;
 - **Auto-redeploy every (hours)** — click **Save schedule**;
+- **Watch paths** — click **Save watch paths**;
 - **Status callback URL** and **Callback token** — click **Save callback**;
 - **Pause deploys** / **Resume deploys**;
 - **Archive** / **Unarchive**.
@@ -334,6 +335,11 @@ Under each port you may also see:
   webhooks. **Auto-redeploy every (hours)** (0–168, `0` = off) re-runs the last
   successful deploy on that interval; click **Save schedule**. See
   [Operations](./operations.md).
+- **Watch paths** (Settings) — one repository path per line. A git push then
+  deploys this project only when it changed a file under one of them, so
+  several projects can build from one repository. Blank = every push deploys.
+  Deploys you start from the panel or the API always run. See
+  [Webhooks](./webhooks.md).
 - **Status callback** (Settings) — **Status callback URL** and **Callback
   token**, saved with **Save callback**. The agent POSTs each status change of
   runs started by a webhook or the API to this URL, with the token in the

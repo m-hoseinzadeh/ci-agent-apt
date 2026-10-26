@@ -55,6 +55,26 @@ present, so a plain `curl` or script call is never filtered:
 - **Branch:** if the body has a `ref`, it must be `refs/heads/<branch>` where
   `<branch>` is the project's configured branch (or the `branch` override).
   Pushes to other branches and tag pushes are skipped.
+- **Watch paths:** if the project has **Watch paths** (Settings tab, or
+  `watch_paths` in the [API](./api.md)), a push deploys only when it changed a
+  file under one of them. This is for several projects built from one
+  repository: a push to one service doesn't rebuild the others. The changed
+  files come from the payload's `commits[].added`, `modified` and `removed`
+  (GitHub, GitLab and Gitea all send them). If the payload can't tell, the push
+  deploys: no commit list, a commit without file lists, or a list the git server
+  cut short (GitLab sends at most 20 commits).
+
+  One pattern per line, relative to the repository root:
+
+  | Pattern | Matches |
+  |---|---|
+  | `services/wallet/**` | everything under `services/wallet` |
+  | `deploy/caddy` | the same: a plain path also covers what's under it |
+  | `Dockerfile` | that file at the top level |
+  | `*.props` | any `.props` file at the top level |
+  | `src/**/*.rs` | any `.rs` file under `src` |
+
+  `**` matches any number of folders; `*` and `?` match within one name.
 
 A skipped hit still answers `202`, with `{"skipped": "<reason>"}`, and shows on
 the **Audit** page. The payload's `repository.*` URL is used only when the
