@@ -367,7 +367,13 @@ already running (for example another project in the same category).
 ## Environment
 
 - Project env vars are set in the UI (KEY=VALUE lines), stored encrypted,
-  injected into every compose command, and masked in run logs.
+  injected into every compose command, and masked in run logs (`*****`):
+  - a value whose name sounds secret (it contains `PASS`, `SECRET`, `TOKEN`,
+    `KEY`, `AUTH`, `PRIVATE`, `CREDENTIAL`, `SESSION`, `COOKIE`, `SIGN`,
+    `CERT`, `SALT`, `PIN` or `DSN`) is always masked;
+  - any other value is masked when it is 6 characters or longer, unless it is
+    a number or a common setting (`true`, `false`, `production`, …). So
+    `REPLICAS=3` doesn't turn every `3` in the log into `*****`.
 - **Shared environment** — set global `KEY=VALUE` lines under
   **Settings → Shared environment** and they are merged into **every** project's
   build and deploy. Use it for values every stack needs (an internal registry

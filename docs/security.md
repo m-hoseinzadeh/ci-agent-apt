@@ -113,7 +113,9 @@ See [API & AI agents](./api.md).
 
 Project env vars and stored **git credentials** (tokens or passwords for private
 clones) are encrypted at rest (XChaCha20-Poly1305, key file `0600`) and masked
-(`*****`) in run logs. The admin panel itself shows env values in **cleartext**,
+(`*****`) in run logs. Short values under ordinary names (`REPLICAS=3`) are not
+masked; give a secret a name that says so (`…_PASSWORD`, `…_TOKEN`, `…_KEY`) and
+it is masked at any length ([which values](/docs/projects#environment)). The admin panel itself shows env values in **cleartext**,
 so anyone logged in to the panel can read them.
 
 ## Network exposure
