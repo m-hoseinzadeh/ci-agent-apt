@@ -24,7 +24,8 @@ immediately.
 
 > **Important:** that secret token is the **only** thing protecting the
 > webhook. Anyone who has the full URL can trigger a deploy. They can also
-> send their own `git_url` or `zip_url` and deploy **any code** they like.
+> send their own `git_url` or `zip_url`, or upload a ZIP, and deploy **any
+> code** they like.
 > So treat the URL like an admin password: keep it private and rotate it if
 > it ever leaks.
 
@@ -116,15 +117,36 @@ curl -X POST https://ci.example.internal/hooks/my-app/<token>/zip \
 curl 'https://ci.example.internal/hooks/my-app/<token>/zip?zip_url=http://artifacts.internal/app-1.2.3.zip'
 ```
 
-The ZIP endpoint always needs a `zip_url` — from the POST body or the
-`?zip_url=` query parameter. Without one it returns `422`.
+The ZIP endpoint needs a `zip_url` (from the POST body or the `?zip_url=`
+query parameter) or the ZIP file itself. Without either one it returns `422`.
+
+### Upload the ZIP
+
+You can also send the ZIP file itself in the POST body. The agent then has
+nothing to download. Set the `Content-Type` to `application/zip` (or
+`application/x-zip-compressed`, or `application/octet-stream`):
+
+```bash
+curl -X POST https://ci.example.internal/hooks/my-app/<token>/zip \
+  -H 'content-type: application/zip' \
+  --data-binary @app.zip
+
+# Deploy the last commit of a git checkout, without its uncommitted files
+git archive --format=zip HEAD | curl -X POST https://ci.example.internal/hooks/my-app/<token>/zip \
+  -H 'content-type: application/zip' --data-binary @-
+```
+
+The upload may be at most `zip_max_bytes` (default 500 MB); a bigger one is
+refused with `413`. If nginx sits in front of the agent, its
+`client_max_body_size` for the agent's domain must allow the upload too.
+The run shows up like a manual upload (source `upload:<file>`).
 
 The archive may have the compose file at its root or inside a single
 top-level directory.
 
 Limits and safety checks:
 
-- **Size:** the download may be at most `zip_max_bytes` (default 500 MB). The
+- **Size:** the download or upload may be at most `zip_max_bytes` (default 500 MB). The
   unpacked files may be at most twice that, and the archive may hold at most
   50,000 entries.
 - **Time:** the download must finish within 10 minutes.
@@ -149,8 +171,8 @@ Limits and safety checks:
 |---|---|
 | `202` | accepted; body `{"run_id": N}` — or `{"skipped": "<reason>"}` when the event/branch filter (or a deploy pause) dropped it |
 | `404` | unknown project, bad token, **or** archived project (all look the same on purpose) |
-| `413` | request body too large (the webhook body cap is 1 MiB) |
-| `422` | body present but unusable (bad JSON, missing `zip_url`, no git URL anywhere) |
+| `413` | request body too large (the webhook body cap is 1 MiB; an uploaded ZIP may be up to `zip_max_bytes`) |
+| `422` | body present but unusable (bad JSON, missing `zip_url`, empty ZIP upload, no git URL anywhere) |
 | `500` | the agent could not queue the run; see the ci-agent log |
 
 `run_id` is the run's **global id** — unique across all projects. It is not the

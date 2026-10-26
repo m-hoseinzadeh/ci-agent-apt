@@ -356,7 +356,8 @@ or by auto-redeploy are **not** reported. See
   or proxy tuning (see [Ports](#ports)).
 - `POST /api/v1/projects/{slug}/rotate-webhook` — make new webhook URLs. The old
   ones stop working. The answer has the new URLs in `webhook_git` and
-  `webhook_zip`.
+  `webhook_zip`. The `webhook_zip` URL also takes a ZIP file as the POST
+  body (see [Webhooks](/docs/webhooks#upload-the-zip)).
 - `GET /api/v1/audit` — the latest audit log entries (`?limit=100`).
 
 ### Domains
