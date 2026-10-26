@@ -327,9 +327,11 @@ created on first use and stored under the data dir. Two challenge types:
   by hand.
 
 > Let's Encrypt only works when the host is reachable from Let's Encrypt's
-> servers (HTTP-01) or you control public DNS (DNS-01). On an air-gapped
-> network, use the **internal CA**, or bring a public certificate over with
-> *Offline certificates* below.
+> servers (HTTP-01) or you control public DNS (DNS-01), and when this server can
+> reach Let's Encrypt over HTTPS. If it can't (a firewall or a national network
+> blocks it), issuing stops after 15 seconds with "could not reach Let's
+> Encrypt". On an air-gapped or blocked network, use the **internal CA**, or
+> bring a public certificate over with *Offline certificates* below.
 
 ## Offline certificates
 

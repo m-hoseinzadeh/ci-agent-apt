@@ -393,10 +393,14 @@ tab and apply nginx right away:
 
   Let's Encrypt checks the domain over plain HTTP on port 80, so its DNS must
   already point at this server (directly or through a CDN that forwards
-  `/.well-known/acme-challenge/`). The call waits for Let's Encrypt, which
-  often takes 10–60 seconds. The answer (status 201) has the updated `domain`,
-  the `certificate` (`name`, `wildcard`, `not_after`) and `nginx`. If Let's
-  Encrypt refuses, the answer is 422 with its reason, and nothing changes.
+  `/.well-known/acme-challenge/`). The server itself also needs outbound HTTPS
+  to Let's Encrypt. The call waits for Let's Encrypt, usually 5–30 seconds.
+  The answer (status 201) has the updated `domain`, the `certificate` (`name`,
+  `wildcard`, `not_after`) and `nginx`. If Let's Encrypt refuses, the answer is
+  422 with its reason, and nothing changes. The same 422 comes after 15 seconds
+  if the server can't reach Let's Encrypt at all ("could not reach Let's
+  Encrypt"), or after 50 seconds if it doesn't finish, which is before nginx or
+  a CDN in front of the panel gives up at 60.
 
   **Behind a CDN:** with HTTPS on, nginx redirects plain HTTP to HTTPS. If the
   CDN reaches this server over plain HTTP, that becomes a redirect loop. Send
