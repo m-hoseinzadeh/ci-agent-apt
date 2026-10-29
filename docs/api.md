@@ -392,6 +392,7 @@ tab and apply nginx right away:
   | `scope` | `single` or `wildcard`, for the other sources. Blank: the zone's apex gets a wildcard, a subdomain a cert of its own. Let's Encrypt always makes a cert for this one host (HTTP-01). |
   | `tls` | `false` stores the certificate but leaves HTTPS off; switch it on later with `PATCH .../domains/{id}` |
   | `cert_pem`, `key_pem` | for `upload`: the full chain and the private key |
+  | `dns_provider` | with `letsencrypt`: get a wildcard for the domain's zone by DNS-01, the TXT records added through this DNS provider (its **Name** on the Certificates page). `"scope": "single"` makes a cert for this one host instead. It renews automatically. |
 
   Let's Encrypt checks the domain over plain HTTP on port 80, so its DNS must
   already point at this server (directly or through a CDN that forwards
@@ -404,12 +405,20 @@ tab and apply nginx right away:
   Encrypt"), or after 50 seconds if it doesn't finish, which is before nginx or
   a CDN in front of the panel gives up at 60.
 
+  With `dns_provider`, the server needs outbound HTTPS to the provider's API
+  too, and the call also waits until the zone's nameservers serve the TXT
+  records. If the order is done within 45 seconds the answer is 201 as above,
+  with `dns_provider` in `certificate`. If not, the answer is **202** with
+  `"status": "issuing"`: the order goes on in the background, and the
+  certificate shows on the domain (`GET .../domains`) when it is done. A
+  failure after that is written to the audit log (`GET /api/v1/audit`).
+
   **Behind a CDN:** with HTTPS on, nginx redirects plain HTTP to HTTPS. If the
   CDN reaches this server over plain HTTP, that becomes a redirect loop. Send
   `"tls": false`, switch the CDN to HTTPS towards the server, then turn HTTPS
   on with `PATCH .../domains/{id}`.
 
-The primary domain, wildcard certificates from Let's Encrypt (DNS-01) and the
+The primary domain, manual Let's Encrypt DNS-01 orders, DNS providers and the
 Let's Encrypt account settings are still managed in the admin panel.
 
 ```bash

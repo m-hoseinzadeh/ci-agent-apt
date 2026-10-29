@@ -260,8 +260,10 @@ host:
   With HTTPS on, plain HTTP requests are redirected to HTTPS.
 - **Renew now** — re-issues the certificate right away. Shown for certificates
   that renew automatically.
-- For uploads and DNS-01 wildcards you see instead: *Renews manually — re-issue
-  before expiry (uploads, or DNS-01 wildcards).*
+- For uploads and manual DNS-01 wildcards you see instead: *Renews manually —
+  re-issue before expiry (uploads, or manual DNS-01 orders).*
+- For a wildcard issued through a DNS provider you see: *Renews automatically —
+  DNS records published through* (the provider's name).
 
 If the host is covered by a **wildcard** that belongs to its zone, the card says
 so. You manage that certificate from its base domain or on the **Certificates**
@@ -272,8 +274,10 @@ The **Issue a certificate** card has three tabs. **Let's Encrypt** opens first.
 1. **Let's Encrypt** — for domains with public DNS that the internet can reach.
    - **Issue via HTTP-01** — a dedicated certificate for this host, validated
      over HTTP on port 80. **Renews automatically.**
-   - **Start wildcard order** — a wildcard for `*.<base>` by DNS-01. You add a
-     DNS TXT record by hand (see *Let's Encrypt* below). Renews manually.
+   - **Start wildcard order** — a wildcard for `*.<base>` by DNS-01. In
+     **TXT records**, pick a DNS provider and ci-agent adds the DNS TXT records
+     itself, so the wildcard **renews automatically**. Or pick **Manual** to add
+     them by hand; then it renews manually (see *Let's Encrypt* below).
 2. **Internal / Self-signed** — generated on the server, fully offline, and
    renewed automatically. Pick the **Source** (Internal CA or Self-signed) and the
    **Scope** (**Wildcard** for the zone and all its subdomains, or **Dedicated**
@@ -297,12 +301,15 @@ The **Certificates** page (sidebar) is the global overview.
   an Internal CA certificate.
 - **Managed certificates** — every certificate with its **Name**, **Covers**,
   **Source**, and **Expires** date. A **manual renew** chip marks certificates
-  that do not renew by themselves. **Renew** re-issues a certificate now (only
-  for ones that renew automatically). **×** deletes it; the domains it covered
-  go back to HTTP.
+  that do not renew by themselves. An **auto · <provider>** chip marks a
+  wildcard that renews through a DNS provider. **Renew** re-issues a certificate
+  now (only for ones that renew automatically). **×** deletes it; the domains it
+  covered go back to HTTP.
 - **Let's Encrypt** — the account settings (see the next section), plus
-  **Wildcard for a zone (DNS-01)**: enter a **Base domain** and click **Start
-  wildcard order**.
+  **Wildcard for a zone (DNS-01)**: enter a **Base domain**, pick who adds the
+  **TXT records**, and click **Start wildcard order**.
+- **DNS providers** — API access to your DNS host, so wildcard orders add their
+  TXT records themselves (see *DNS providers* below).
 - **Add an offline certificate** — create an Internal CA, Self-signed, or
   uploaded certificate for any **Name**, with **Wildcard** or **Dedicated**
   scope, then click **Create certificate**.
@@ -318,13 +325,20 @@ created on first use and stored under the data dir. Two challenge types:
   at `/.well-known/acme-challenge/<token>`, which nginx proxies to it for every
   project domain. Issuance **and renewal** need no operator action; daily
   housekeeping renews these within 30 days of expiry and re-applies nginx.
-- **DNS-01** (wildcard, manual) — after you click **Start wildcard order**, the
-  page shows a **Finish the wildcard order (DNS-01)** card with the TXT
-  record(s) to add. Publish them at your DNS provider, wait for them to spread,
-  then click **Validate & issue**. A wildcard needs **two** TXT records with the
-  same name and different values — add **both**; do not replace one with the
-  other. This path is **not** auto-renewable, so plan to renew wildcard LE certs
-  by hand.
+- **DNS-01 through a DNS provider** (wildcard, fully automatic) — pick the
+  provider in **TXT records** and click **Start wildcard order**. ci-agent adds
+  the TXT records with the provider's API, waits until the zone's nameservers
+  serve them, has Let's Encrypt check them, and then deletes them. Issuance
+  **and renewal** need no operator action, like HTTP-01. If the order is not
+  done after 45 seconds, the page says it is still running; reload in a minute
+  or two. If it fails, the reason is in the **Audit log**.
+- **DNS-01 by hand** (wildcard, manual) — pick **Manual** in **TXT records**.
+  After you click **Start wildcard order**, the page shows a **Finish the
+  wildcard order (DNS-01)** card with the TXT record(s) to add. Publish them at
+  your DNS host, wait for them to spread, then click **Validate & issue**. A
+  wildcard needs **two** TXT records with the same name and different values —
+  add **both**; do not replace one with the other. This path is **not**
+  auto-renewable, so plan to renew these wildcards by hand.
 
 > Let's Encrypt only works when the host is reachable from Let's Encrypt's
 > servers (HTTP-01) or you control public DNS (DNS-01), and when this server can
@@ -332,6 +346,29 @@ created on first use and stored under the data dir. Two challenge types:
 > blocks it), issuing stops after 15 seconds with "could not reach Let's
 > Encrypt". On an air-gapped or blocked network, use the **internal CA**, or
 > bring a public certificate over with *Offline certificates* below.
+
+### DNS providers
+
+A DNS provider lets ci-agent add the `_acme-challenge` TXT records for a
+Let's Encrypt wildcard itself, so the wildcard renews automatically 30 days
+before it expires. Two are supported: **Cloudflare** and **ArvanCloud**. The
+server must reach the provider's API and Let's Encrypt over HTTPS.
+
+1. Get an API token:
+   - **Cloudflare** — **My Profile → API Tokens → Create Token**. Give it
+     **Zone → Zone → Read** and **Zone → DNS → Edit**, for your zone or all zones.
+   - **ArvanCloud** — **Profile → API keys** (a machine user's key). You can
+     paste it with or without the leading `Apikey`.
+2. On the **Certificates** page, in **DNS providers**, pick the **Provider**,
+   give it a **Name** (optional), paste the **API token**, and click
+   **Save & test**. ci-agent checks the token and lists the zones it can see.
+   Saving an existing name replaces its token.
+3. Start a wildcard order and pick the provider in **TXT records**.
+
+**Test** checks a saved token again. **×** deletes a provider; wildcards that
+renewed through it then renew manually. A wildcard you already have from a
+manual order keeps renewing manually until you issue it again through a
+provider: start a new wildcard order for the same zone and pick the provider.
 
 ## Offline certificates
 
@@ -344,10 +381,12 @@ servers.
 
 **On the online server:**
 
-1. In **Issue & export (online server)**, enter the **Domain** and pick the
-   **Scope** (**Wildcard** or **Dedicated**). Click **Start order**.
-2. The **Finish the order (DNS-01)** card shows the TXT record(s). Add them at
-   your DNS provider, wait for them to spread, then click **Validate & issue**.
+1. In **Issue & export (online server)**, enter the **Domain**, pick the
+   **Scope** (**Wildcard** or **Dedicated**) and who adds the **TXT records**.
+   Click **Start order**.
+2. With a DNS provider, ci-agent finishes the order itself. With **Manual**,
+   the **Finish the order (DNS-01)** card shows the TXT record(s). Add them at
+   your DNS host, wait for them to spread, then click **Validate & issue**.
 3. In the **Offline certificates** table, click **Download** on the new row. You
    get a file named `ci-agent-cert-<domain>.zip` (the certificate, its key, and a
    manifest).
@@ -365,8 +404,10 @@ servers.
 
 **Renewing:**
 
-1. On the **online** server, click **Renew** on the row. This starts a fresh
-   DNS-01 order; finish it as above, then **Download** the new bundle.
+1. On the **online** server: a certificate issued through a DNS provider renews
+   by itself (marked **auto · <provider>**). For a manual one, click **Renew** on
+   the row; this starts a fresh DNS-01 order, which you finish as above. Then
+   **Download** the new bundle.
 2. On the **air-gapped** server, import the new bundle. A newer bundle for the
    same domain replaces the old one in place.
 
@@ -374,14 +415,15 @@ servers.
 > online server does the public part; you carry the finished certificate over by
 > hand. You repeat this before each expiry.
 
-The table on this page lists only certificates that cannot renew by themselves
-(uploads and DNS-01 wildcards). **×** deletes one; its domains go back to HTTP.
+The table on this page lists uploads and Let's Encrypt DNS-01 certificates.
+**×** deletes one; its domains go back to HTTP.
 
 ## Renewal
 
-Generated certs (internal CA, self-signed, LE HTTP-01) are re-issued
-automatically by daily housekeeping once they fall within **30 days** of
-expiry. Uploaded and imported certs and LE **DNS-01** wildcards are manual. The
+Generated certs (internal CA, self-signed), LE HTTP-01 certs, and LE DNS-01
+wildcards issued through a DNS provider are re-issued automatically by daily
+housekeeping once they fall within **30 days** of expiry. Uploaded and imported
+certs and LE DNS-01 wildcards from a manual order are manual. The
 Certificates page shows each cert's expiry, and the Domains tab shows a **renew**
 chip, so you can renew before it lapses.
 
@@ -398,12 +440,12 @@ An **admin** API key can do most of this page without the panel (see
 |---|---|
 | **Add domain**, **×** on the Domains tab | `POST` and `DELETE /api/v1/projects/{slug}/domains…` |
 | **Serve HTTPS** switch | `PATCH /api/v1/projects/{slug}/domains/{id}` with `{"tls": true}` |
-| **Issue a certificate** card: Let's Encrypt HTTP-01, Internal CA, Self-signed, Upload | `POST /api/v1/projects/{slug}/domains/{id}/certificate` |
+| **Issue a certificate** card: Let's Encrypt HTTP-01, Let's Encrypt DNS-01 through a DNS provider, Internal CA, Self-signed, Upload | `POST /api/v1/projects/{slug}/domains/{id}/certificate` |
 | **Default URL** column (Subdomain, Path) of the Ports card | `PATCH /api/v1/projects/{slug}/ports/{port}` with `subdomain` / `path` |
 | **Proxy tuning** panel | `PATCH /api/v1/projects/{slug}/ports/{port}` with `nginx` |
 
-Picking the **Primary** domain, Let's Encrypt wildcards (DNS-01), the
-Certificates page, and adding or removing ports stay in the panel.
+Picking the **Primary** domain, manual Let's Encrypt DNS-01 orders, DNS
+providers, the Certificates page, and adding or removing ports stay in the panel.
 
 ## The admin panel's own TLS
 

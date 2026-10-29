@@ -171,9 +171,10 @@ page. Each pass does these steps:
    successful deploy, not only nightly (see *Disk cleanup* below).
 4. Low-disk check → `disk_low` notification.
 5. Certificate renewal — auto-renewable certs (internal CA, self-signed,
-   Let's Encrypt HTTP-01) within 30 days of expiry are re-issued and nginx is
-   re-applied. Uploaded certs and LE DNS-01 wildcards are manual. See
-   [Domains & TLS](./domains.md).
+   Let's Encrypt HTTP-01, and Let's Encrypt DNS-01 wildcards issued through a
+   DNS provider) within 30 days of expiry are re-issued and nginx is
+   re-applied. Uploaded certs and wildcards from a manual DNS-01 order are
+   manual. See [Domains & TLS](./domains.md).
 
 It also sweeps stale scratch files: an abandoned staged update after an hour,
 and leftover deploy-ZIP uploads (from runs that were cancelled or lost while
@@ -228,7 +229,7 @@ Set `notify_hook` to any executable; it receives one JSON argument:
 | `disk_low` | the nightly check finds free disk below `min_free_disk_bytes` |
 | `health_degraded` | a project's background health check stays in a problem state (see *Health monitoring & down-alerts* above); `problems` lists what is wrong |
 | `health_recovered` | that project is healthy again |
-| `cert_expiring` | a certificate that can't renew by itself (an uploaded/imported cert, or a Let's Encrypt DNS-01 wildcard) enters its renewal window; sent once per expiry date |
+| `cert_expiring` | a certificate that can't renew by itself (an uploaded/imported cert, or a Let's Encrypt wildcard from a manual DNS-01 order) enters its renewal window; sent once per expiry date |
 
 > **Hook or callback?** `notify_hook` is one program on **this server** that
 > hears about **every** project. The per-project

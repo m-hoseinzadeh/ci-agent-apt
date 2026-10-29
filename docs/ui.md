@@ -363,7 +363,9 @@ title is **SSL · *your-domain***.
   **Renew now** renews it.
 - **Issue a certificate** — three tabs:
   - **Let's Encrypt** — **Issue via HTTP-01** (one host, renews automatically)
-    or **Start wildcard order** (DNS-01, renewed by hand).
+    or **Start wildcard order** (DNS-01). Pick a DNS provider in **TXT
+    records** and it renews automatically; pick **Manual** and you renew it by
+    hand.
   - **Internal / Self-signed** — made on this server, fully offline. Pick a
     **Source** and **Wildcard** or **Dedicated**, then **Issue & enable HTTPS**.
   - **Upload** — paste a certificate and key you got elsewhere, then **Upload &
@@ -385,6 +387,9 @@ link in **Settings → Default subdomain** or on a domain's SSL page.
   **Source** and when it **Expires**. **Renew** or **×** (delete).
 - **Let's Encrypt** — your **Account email**, a staging switch, **Save Let's
   Encrypt settings**, and **Start wildcard order** for a whole zone.
+- **DNS providers** — Cloudflare or ArvanCloud API tokens. With one, a wildcard
+  order adds its DNS records itself and renews automatically. **Save & test**,
+  **Test**, or **×** (delete).
 - **Add an offline certificate** — make or upload one without internet access,
   then **Create certificate**.
 
@@ -399,12 +404,16 @@ Get a trusted Let's Encrypt certificate for a server that has **no internet**.
 1. On a server **with** internet, open **Offline certs**. Under **Issue &
    export (online server)**, enter the **Domain**, pick **Wildcard** or
    **Dedicated**, and click **Start order**.
-2. Publish the DNS TXT record it shows, then click **Validate & issue**.
+2. With a DNS provider picked in **TXT records**, ci-agent does the DNS part
+   itself. With **Manual**, publish the DNS TXT record it shows, then click
+   **Validate & issue**.
 3. **Download** the bundle from the **Offline certificates** table.
 4. On the offline server, open **Offline certs**. Under **Import a bundle
    (offline server)**, choose the **Bundle file** and click **Import bundle**.
 
-**Renew** in the table starts a fresh DNS order; download and import again.
+A certificate issued through a DNS provider renews by itself on the online
+server; for a manual one, **Renew** in the table starts a fresh DNS order.
+Either way, download and import the new bundle again.
 Full details: [Domains & TLS](./domains.md).
 
 ![screenshot: the Offline certificates page](TODO)
