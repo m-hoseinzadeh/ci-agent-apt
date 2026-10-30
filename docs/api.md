@@ -136,7 +136,7 @@ Good to know:
 - `GET /api/v1/projects` — all projects with their mode, categories and last
   run. Add `?archived=true` to include archived projects.
 - `GET /api/v1/projects/{slug}` — one project: git URL and branch, mode, ports,
-  services, domains, watch paths, health and last run. Operator and admin keys also get
+  services, domains, watch paths, `catch_all`, health and last run. Operator and admin keys also get
   `compose_inline`, `status_callback_url` and `status_callback_token_set`
   (`true`/`false` — the token itself is never returned).
 
@@ -243,8 +243,10 @@ queued `run`. A compose or dockerfile project needs a `git_url` to use
   `compose_path`, `dockerfile_path`, `working_dir`, `image_ref`,
   `compose_inline`, `run_timeout_s` (seconds, at most 86400; `0` = server
   default), `status_callback_url` and `status_callback_token` (an empty string
-  clears them), `watch_paths` (`[]` clears them: every push deploys again). `git_url`, `compose_inline`, `category` and the two
-  `status_callback_*` fields need an admin key. Ports are added and removed
+  clears them), `watch_paths` (`[]` clears them: every push deploys again),
+  `catch_all` (`true` or `false`, see [Catch-all](#catch-all)). `git_url`,
+  `compose_inline`, `category`, the two `status_callback_*` fields and
+  `catch_all` need an admin key. Ports are added and removed
   in the admin panel; their default URLs and proxy tuning change with the
   [port endpoints](#ports), and domains with the [domain endpoints](#domains). The answer holds the updated `project` and a `note`: a
   short text that starts with `Saved` and says what else happened.
@@ -368,9 +370,12 @@ tab and apply nginx right away:
 
 - `POST /api/v1/projects/{slug}/domains` with `{"domain": "app.example.com"}`.
   Add `"port_id": <id>` to bind it to one of the project's extra ports instead
-  of its primary HTTP port. The hostname must be a bare, valid name; it may not
-  be the admin panel's own domain, another project's domain (409 `conflict`)
-  or a host routed to a tunnel. The new domain is not primary, so it serves the
+  of its primary HTTP port. The hostname must be a bare, valid name, or a
+  wildcard like `*.example.com` (see [Wildcard domains](/docs/domains#wildcard-domains));
+  it may not be the admin panel's own domain, another project's domain (409
+  `conflict`) or a host routed to a tunnel. A host that sits under another
+  project's wildcard, like `ci.example.com` next to `*.example.com`, is
+  allowed: it goes to its own project. The new domain is not primary, so it serves the
   app directly. Add `"tls": true` to serve it over HTTPS at once; that needs a
   certificate that already covers the hostname (a wildcard for its zone or one
   named for it), otherwise the answer is 422 and nothing is added. The answer
@@ -389,10 +394,10 @@ tab and apply nginx right away:
   | Field | Meaning |
   |---|---|
   | `source` | `letsencrypt` (default), `internal_ca`, `self_signed` or `upload` |
-  | `scope` | `single` or `wildcard`, for the other sources. Blank: the zone's apex gets a wildcard, a subdomain a cert of its own. Let's Encrypt always makes a cert for this one host (HTTP-01). |
+  | `scope` | `single` or `wildcard`, for the other sources. Blank: the zone's apex gets a wildcard, a subdomain a cert of its own. Let's Encrypt always makes a cert for this one host (HTTP-01). A wildcard domain (`*.example.com`) always gets a wildcard for its zone; `single` is refused. |
   | `tls` | `false` stores the certificate but leaves HTTPS off; switch it on later with `PATCH .../domains/{id}` |
   | `cert_pem`, `key_pem` | for `upload`: the full chain and the private key |
-  | `dns_provider` | with `letsencrypt`: get a wildcard for the domain's zone by DNS-01, the TXT records added through this DNS provider (its **Name** on the Certificates page). `"scope": "single"` makes a cert for this one host instead. It renews automatically. |
+  | `dns_provider` | with `letsencrypt`: get a wildcard for the domain's zone by DNS-01, the TXT records added through this DNS provider (its **Name** on the Certificates page). `"scope": "single"` makes a cert for this one host instead. It renews automatically. A wildcard domain needs this: Let's Encrypt can't issue a wildcard over HTTP-01, so `letsencrypt` without `dns_provider` is refused (422). |
 
   Let's Encrypt checks the domain over plain HTTP on port 80, so its DNS must
   already point at this server (directly or through a CDN that forwards
@@ -426,6 +431,28 @@ curl -X POST -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json'
   -d '{"domain":"shop.example.com"}' "$API/projects/shop/domains"
 curl -X POST -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
   -d '{"source":"letsencrypt"}' "$API/projects/shop/domains/12/certificate"
+```
+
+Each domain in `GET .../domains` has `wildcard`: `true` for a `*.zone` domain.
+
+### Catch-all
+
+One project on the server can receive **every request whose host matches no
+other domain**, for example your customers' own domains pointed at this server.
+See [Catch-all](/docs/domains#catch-all-any-other-host). Turn it on or off with
+`PATCH /api/v1/projects/{slug}` and `{"catch_all": true}` or
+`{"catch_all": false}` (admin key). The project needs an HTTP port. If another
+project has it, the answer is 409 `conflict` and nothing changes; turn it off
+there first. `GET /api/v1/projects/{slug}` shows `catch_all`.
+
+Example — a project that serves every subdomain of `example.com` and every
+other host:
+
+```bash
+curl -X POST -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
+  -d '{"domain":"*.example.com"}' "$API/projects/sites/domains"
+curl -X PATCH -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
+  -d '{"catch_all":true}' "$API/projects/sites"
 ```
 
 ### Ports

@@ -8,7 +8,8 @@ plain host service you installed.
 
 A project can serve **many hostnames**. Add them on the project's **Domains**
 tab. Type a bare hostname (for example `app.example.lan`) in **Add domain** and
-click **Add**.
+click **Add**. You can also add a wildcard such as `*.example.com` (see
+*Wildcard domains* below).
 
 Every change on this tab is written to nginx and nginx is reloaded
 **automatically**. You do not need to apply anything by hand.
@@ -20,7 +21,7 @@ Each domain is one row in the table. The columns are:
 - **Primary** — pick at most one primary domain per port. The other domains on
   that port then **301-redirect** to it (good for `www → apex`, or for retiring
   an old name). Pick the last row, **None — every domain serves the app
-  directly**, to turn redirects off.
+  directly**, to turn redirects off. A wildcard domain can't be the primary.
 - **Domain** — the hostname. Edit it in place and click **Rename** to change it.
   The primary domain shows a **primary** chip.
 - **Port** — only shown when the project has extra ports. Pick another port from
@@ -53,6 +54,77 @@ To switch HTTPS on or off, open the domain's SSL page (**Manage**) and use the
 > certificate covers it, **and** HTTPS is switched on for it. You cannot switch
 > HTTPS on before a certificate exists — ci-agent refuses and tells you to
 > create one first.
+
+## Wildcard domains
+
+A wildcard domain sends **every subdomain of a zone** to one project. Type it in
+**Add domain** as `*.` plus the zone, for example `*.example.com`. Then
+`shop.example.com`, `blog.example.com` and so on all reach this project.
+
+Rules:
+
+- Only the first label can be `*`, and at least two labels must follow it.
+  `*.example.com` works; `*.com`, `*example.com` and `a.*.example.com` do not.
+- Each wildcard belongs to one project, like any other domain.
+- A host that **another project names exactly** still goes to that project.
+  For example, with `*.example.com` on project `sites` and `ci.example.com` on
+  project `ci`, `ci.example.com` goes to `ci`. nginx always prefers an exact
+  name. Default URLs (`<slug>.<base>`) are exact names too, so they keep
+  working.
+- `*.example.com` does not match `example.com` itself. Add `example.com` as
+  its own domain if you want it.
+- A wildcard can't be the **Primary** domain, because it is not one host. It
+  can still redirect to another primary domain.
+
+**HTTPS for a wildcard** needs a **wildcard certificate** for the zone (it
+covers `example.com` and `*.example.com`). On the domain's SSL page:
+
+- **Let's Encrypt** — use **Start wildcard order** (DNS-01). HTTP-01 can't
+  issue a wildcard, so it is not offered. Pick a DNS provider so it renews
+  automatically.
+- **Internal / Self-signed** and **Upload** — only the **Wildcard** scope is
+  offered.
+
+With HTTPS on, plain HTTP is redirected to HTTPS on the same host the visitor
+asked for.
+
+> **What this means.** A wildcard certificate covers one level only:
+> `shop.example.com`, but not `a.shop.example.com`. nginx still sends the deeper
+> name to the project, but over HTTPS the browser shows a certificate error.
+
+## Catch-all: any other host
+
+Normally a request for a host that no project has gets a **404 page** ("Nothing
+is here yet"). You can send these requests to **one project** instead. This is
+for platforms where customers point **their own domains** at your server (for
+example through Cloudflare for SaaS): the app sees the customer's host in the
+`Host` header and decides what to show.
+
+On the project's **Domains** tab, tick **Receive requests for any other host
+(catch-all)**. nginx is updated at once.
+
+- Only **one project** on the server can have the catch-all. If another project
+  has it, the box is greyed out and names that project; turn it off there
+  first.
+- The project needs an **HTTP port**. Requests go to its **primary port**, with
+  that port's **Proxy tuning**.
+- Hosts that any project names (exact or wildcard), default URLs, and the admin
+  panel's domain keep going where they went before. Only unknown hosts reach
+  the catch-all.
+- `/.well-known/acme-challenge/` still goes to ci-agent, so Let's Encrypt
+  HTTP-01 keeps working for new domains.
+- **HTTPS:** the catch-all answers on port 443 only when a wildcard certificate
+  covers the base domain (the same rule as the 404 page). It then uses that
+  certificate, which does not match customers' domains. Behind Cloudflare,
+  reach the server over plain HTTP (the Flexible SSL mode), or use a Cloudflare
+  mode that does not check the origin certificate.
+- Untick the box to go back to the 404 page.
+
+ci-agent writes this into `/etc/nginx/conf.d/00-ci-agent-catchall.conf`. The
+`00-` name makes it nginx's default server. If another nginx file declares
+`default_server` on port 80 (for example the stock
+`/etc/nginx/sites-enabled/default`), that file wins and the catch-all gets no
+requests. Remove that default site.
 
 ## Default URLs: subdomain and path
 
@@ -438,7 +510,8 @@ An **admin** API key can do most of this page without the panel (see
 
 | In the panel | With the API |
 |---|---|
-| **Add domain**, **×** on the Domains tab | `POST` and `DELETE /api/v1/projects/{slug}/domains…` |
+| **Add domain** (also `*.zone`), **×** on the Domains tab | `POST` and `DELETE /api/v1/projects/{slug}/domains…` |
+| **Receive requests for any other host (catch-all)** | `PATCH /api/v1/projects/{slug}` with `{"catch_all": true}` |
 | **Serve HTTPS** switch | `PATCH /api/v1/projects/{slug}/domains/{id}` with `{"tls": true}` |
 | **Issue a certificate** card: Let's Encrypt HTTP-01, Let's Encrypt DNS-01 through a DNS provider, Internal CA, Self-signed, Upload | `POST /api/v1/projects/{slug}/domains/{id}/certificate` |
 | **Default URL** column (Subdomain, Path) of the Ports card | `PATCH /api/v1/projects/{slug}/ports/{port}` with `subdomain` / `path` |
@@ -481,6 +554,11 @@ above). See also [Security](./security.md).
 | "No certificate covers … — create one (base …) on the Certificates page first" | You tried to turn on HTTPS without a certificate. Issue one on the domain's SSL page first. |
 | A domain shows **covered** or **ready**, but the site is still HTTP | A certificate exists, but HTTPS is off for this domain. Open **Manage** and switch on **Serve HTTPS**. |
 | "Domain already in use" | Another project already has this hostname. Remove it there first. |
+| "Invalid domain — a bare hostname … or a wildcard like *.example.com" | Type only the host: no `http://`, no port, no path. A wildcard is `*.` plus at least two labels. |
+| "A wildcard domain can't be the primary …" | Pick an exact host as the primary, or **None**. |
+| "Let's Encrypt can't issue a wildcard over HTTP-01 …" | Use **Start wildcard order** (DNS-01) for a wildcard domain. |
+| "Project '…' already receives the catch-all; turn it off there first" | Only one project can have the catch-all. Untick it on the other project. |
+| Customers' domains still get the 404 page with the catch-all on | Another nginx file is the default server (for example `/etc/nginx/sites-enabled/default` with `default_server`). Remove it and reload nginx. |
 | "'…' is routed to tunnel '…' — remove that route first" | This box is a tunnel relay and that hostname goes down a tunnel. Delete the route on the **Tunnel** page first — see [Reverse tunnel](./tunnel.md). |
 | "Set a base path in Settings before exposing a project on a path …" | Single-domain mode needs a **Base path** (e.g. `/p`) before any project can use **Path**. |
 | An app under a path loads without styles or redirects to `/` | The app uses absolute URLs. Give it a configurable base path, or use **Subdomain** instead. |

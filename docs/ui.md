@@ -217,10 +217,12 @@ has more than one port, there is one table per port. Every change is written to
 nginx and reloaded right away.
 
 - **Add domain** — type a hostname (and pick a port, if there are several), then
-  click **Add**.
+  click **Add**. A wildcard such as `*.example.com` sends every subdomain of
+  `example.com` to this app, except hosts another project names exactly. See
+  [Wildcard domains](/docs/domains#wildcard-domains).
 - **Primary** — pick one domain with the radio button. The other domains on that
   port then redirect (301) to it. Pick **None — every domain serves the app
-  directly** to turn the redirect off.
+  directly** to turn the redirect off. A wildcard can't be picked.
 - **Rename** — edit the hostname in its box and click **Rename**.
 - **Port** (only with several ports) — move the domain to another port.
 - **HTTPS** — a chip shows the certificate state:
@@ -235,6 +237,11 @@ nginx and reloaded right away.
   this domain instead of the app. An **offline** chip appears. The container
   keeps running. Untick it to bring the app back.
 - **×** — delete the domain (you are asked to confirm).
+- **Catch-all** — tick **Receive requests for any other host (catch-all)** to
+  send every request whose host no project has to this app (for example
+  customers' own domains). Untick it to show the 404 page again. Only one
+  project can have it; if another one does, the box is greyed out and names
+  it. See [Catch-all](/docs/domains#catch-all-any-other-host).
 
 Under each port you may also see:
 
