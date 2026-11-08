@@ -399,7 +399,9 @@ You can also attach storage from the UI: the **Volumes** card on the project's
 mode. For **Image** and **Dockerfile** projects it is the only way, because you
 don't write their compose file. For **Compose** and **Inline compose** projects,
 pick the **Service** the volume belongs to, and the agent adds it to that
-service for you. See the [Admin UI guide](./ui.md).
+service for you. See the [Admin UI guide](./ui.md). An **admin** API key can
+do the same with `POST` and `DELETE /api/v1/projects/{slug}/volumes…` (see
+[API & AI agents](/docs/api#volumes)).
 
 ## Resource limits & GPU
 
@@ -418,6 +420,10 @@ discovered service:
 Both apply on the **next deploy**. For Image / Dockerfile projects a **Redeploy**
 or **Recreate** also applies them (the agent regenerates the compose override
 from the current settings).
+
+An **operator** API key can set them too:
+`PATCH /api/v1/projects/{slug}/limits/{service}` with `cpus`, `memory_mb` and
+`gpu` (see [API & AI agents](/docs/api#resource-limits)).
 
 > **GPU prerequisite:** a detected GPU only proves the *driver* is installed.
 > Docker also needs the **NVIDIA Container Toolkit** registered as a runtime.

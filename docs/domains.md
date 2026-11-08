@@ -514,11 +514,13 @@ An **admin** API key can do most of this page without the panel (see
 | **Receive requests for any other host (catch-all)** | `PATCH /api/v1/projects/{slug}` with `{"catch_all": true}` |
 | **Serve HTTPS** switch | `PATCH /api/v1/projects/{slug}/domains/{id}` with `{"tls": true}` |
 | **Issue a certificate** card: Let's Encrypt HTTP-01, Let's Encrypt DNS-01 through a DNS provider, Internal CA, Self-signed, Upload | `POST /api/v1/projects/{slug}/domains/{id}/certificate` |
+| **Add port**, **×** on the Ports card | `POST` and `DELETE /api/v1/projects/{slug}/ports…` |
+| Host / container port, service, slug and label of a port | `PATCH /api/v1/projects/{slug}/ports/{port}` with `host_port`, `container_port`, `service`, `slug`, `label` |
 | **Default URL** column (Subdomain, Path) of the Ports card | `PATCH /api/v1/projects/{slug}/ports/{port}` with `subdomain` / `path` |
 | **Proxy tuning** panel | `PATCH /api/v1/projects/{slug}/ports/{port}` with `nginx` |
 
 Picking the **Primary** domain, manual Let's Encrypt DNS-01 orders, DNS
-providers, the Certificates page, and adding or removing ports stay in the panel.
+providers and the Certificates page stay in the panel.
 
 ## The admin panel's own TLS
 
