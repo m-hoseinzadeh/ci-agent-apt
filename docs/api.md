@@ -68,8 +68,8 @@ Each key has one level. A higher level can do everything a lower level can.
 | Level | What it can do |
 |---|---|
 | `read` | See projects, runs, build logs, container logs, containers and health. |
-| `operator` | Everything in `read`, plus: create image-mode projects, edit projects, read and change environment variables, deploy, redeploy, cancel, recreate, start/stop/restart containers, pause deploys. Works with the source an admin set up; it **cannot** choose a git repository, zip URL, inline compose file or category. |
-| `admin` | Everything in `operator`, plus: choose git repositories, zip URLs, inline compose files and categories; archive and delete projects; run commands inside containers; manage domains, certificates, default URLs and proxy tuning; read the audit log; rotate webhook tokens. |
+| `operator` | Everything in `read`, plus: create image-mode projects, edit projects, set resource limits and the auto-redeploy schedule, read and change environment variables, deploy, redeploy, cancel, recreate, start/stop/restart containers, pause deploys. Works with the source an admin set up; it **cannot** choose a git repository, zip URL, inline compose file or category. |
+| `admin` | Everything in `operator`, plus: choose git repositories, zip URLs, inline compose files and categories; archive and delete projects; run commands inside containers; manage domains, certificates, ports, default URLs, proxy tuning and volumes; read the audit log; rotate webhook tokens. |
 
 **Why operator keys can't choose the source:** a compose file or repository
 decides what runs, and a compose file can ask for a privileged container or
@@ -135,8 +135,9 @@ Good to know:
   `problem`) and a list of `problems`.
 - `GET /api/v1/projects` — all projects with their mode, categories and last
   run. Add `?archived=true` to include archived projects.
-- `GET /api/v1/projects/{slug}` — one project: git URL and branch, mode, ports,
-  services, domains, watch paths, `catch_all`, health and last run. Operator and admin keys also get
+- `GET /api/v1/projects/{slug}` — one project: git URL and branch, mode, ports
+  (`http_port`, `container_port`, `primary_service`), services, domains, watch
+  paths, `catch_all`, `run_timeout_s`, `redeploy_every_hours`, health and last run. Operator and admin keys also get
   `compose_inline`, `status_callback_url` and `status_callback_token_set`
   (`true`/`false` — the token itself is never returned).
 
@@ -173,6 +174,13 @@ Good to know:
   on or off) and its proxy tuning (`nginx`: `max_body_mb`, `proxy_timeout_s`,
   `websockets`, `extra`). A read key sees `extra_set` (`true`/`false`) instead
   of the `extra` directives.
+- `GET /api/v1/projects/{slug}/limits` — the CPU and memory cap and GPU access
+  of each service, as on the **Resource limits** card: `service`, `cpus`
+  (cores, e.g. `0.5`), `memory_mb` and `gpu`. `null` means no cap. Every known
+  service is listed, also the ones without a cap.
+- `GET /api/v1/projects/{slug}/volumes` — the project's volume mounts: `id`,
+  `kind` (`named` or `bind`), `source`, `target`, `read_only` and `service`
+  (`null` = the single `app` service).
 
 ### Containers and app logs
 
@@ -248,11 +256,14 @@ queued `run`. A compose or dockerfile project needs a `git_url` to use
   `compose_inline`, `run_timeout_s` (seconds, at most 86400; `0` = server
   default), `status_callback_url` and `status_callback_token` (an empty string
   clears them), `watch_paths` (`[]` clears them: every push deploys again),
-  `catch_all` (`true` or `false`, see [Catch-all](#catch-all)). `git_url`,
+  `catch_all` (`true` or `false`, see [Catch-all](#catch-all)),
+  `redeploy_every_hours` (re-run the last successful deploy every N hours,
+  0–168; `0` = off). `git_url`,
   `compose_inline`, `category`, the two `status_callback_*` fields and
-  `catch_all` need an admin key. Ports are added and removed
-  in the admin panel; their default URLs and proxy tuning change with the
-  [port endpoints](#ports), and domains with the [domain endpoints](#domains). The answer holds the updated `project` and a `note`: a
+  `catch_all` need an admin key. Ports change with the
+  [port endpoints](#ports), resource limits with the
+  [limit endpoint](#resource-limits), volumes with the
+  [volume endpoints](#volumes), and domains with the [domain endpoints](#domains). The answer holds the updated `project` and a `note`: a
   short text that starts with `Saved` and says what else happened.
 
   Example — report this project's API and webhook deploys to your CD system:
@@ -264,6 +275,27 @@ queued `run`. A compose or dockerfile project needs a `git_url` to use
          "status_callback_token":"<shared secret>"}' \
     "$API/projects/my-app"
   ```
+
+### Resource limits
+
+- `PATCH /api/v1/projects/{slug}/limits/{service}` — cap one service's CPU and
+  memory, or give it the GPU, as on the **Resource limits** card of the
+  **Settings** tab. Send only what you want to change:
+
+  | Field | Meaning |
+  |---|---|
+  | `cpus` | cores, a number or a string: `0.5` = half a core, `2` = two cores. `null` = no CPU cap. |
+  | `memory_mb` | memory cap in MB, e.g. `512`. `null` = no memory cap. |
+  | `gpu` | `true` gives the service the host's GPU (like `--gpus all`). The host needs the NVIDIA Container Toolkit, or the deploy fails. |
+
+  `{service}` is a service name from `GET .../limits` (`app` for dockerfile and
+  image projects). The caps take effect on the **next deploy**. The answer has
+  the saved `limit` and a `note`.
+
+```bash
+curl -X PATCH -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
+  -d '{"cpus":0.5,"memory_mb":512}' "$API/projects/shop/limits/web"
+```
 
 ### Environment variables
 
@@ -374,8 +406,12 @@ may send it.
 - `DELETE /api/v1/projects/{slug}/domains/{id}` — delete a domain.
 - `POST /api/v1/projects/{slug}/domains/{id}/certificate` — get a certificate
   for a domain (see [Domains](#domains)).
-- `PATCH /api/v1/projects/{slug}/ports/{port}` — change a port's default URLs
-  or proxy tuning (see [Ports](#ports)).
+- `POST /api/v1/projects/{slug}/ports` — add an extra port (see [Ports](#ports)).
+- `PATCH /api/v1/projects/{slug}/ports/{port}` — change a port's numbers,
+  service, slug, default URLs or proxy tuning (see [Ports](#ports)).
+- `DELETE /api/v1/projects/{slug}/ports/{port}` — remove an extra port.
+- `POST /api/v1/projects/{slug}/volumes` — mount a volume (see [Volumes](#volumes)).
+- `DELETE /api/v1/projects/{slug}/volumes/{id}` — remove a volume mount.
 - `POST /api/v1/projects/{slug}/rotate-webhook` — make new webhook URLs. The old
   ones stop working. The answer has the new URLs in `webhook_git` and
   `webhook_zip`. The `webhook_zip` URL also takes a ZIP file as the POST
@@ -477,9 +513,22 @@ curl -X PATCH -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json
 
 ### Ports
 
-Each port has default URLs and proxy tuning, as on the **Ports** card of the
-**Settings** tab and the **Proxy tuning** panel of the **Domains** tab. They
-change nginx, so they need an **admin** key.
+These do what the **Ports** card of the **Settings** tab and the **Proxy
+tuning** panel of the **Domains** tab do. They change nginx, so they need an
+**admin** key.
+
+- `POST /api/v1/projects/{slug}/ports` — publish an extra port:
+
+  | Field | Required | Meaning |
+  |---|---|---|
+  | `host_port` | yes | port published on the server (the nginx proxy target) |
+  | `container_port` | no | port the service listens on inside; default = `host_port` |
+  | `service` | no | compose service that publishes it; default = the single `app` service |
+  | `slug` | no | names its default subdomain and path; default = from `label`, else `port-<host_port>` |
+  | `label` | no | free text |
+
+  A port this project already publishes, or a slug another of its ports uses,
+  gives 409 `conflict`. The answer (status 201) has the new `port` and `nginx`.
 
 - `PATCH /api/v1/projects/{slug}/ports/{port}` — `{port}` is `primary` (the
   project's HTTP port) or an extra port's `id` from `GET .../ports`. Send only
@@ -487,11 +536,16 @@ change nginx, so they need an **admin** key.
 
   | Field | Meaning |
   |---|---|
+  | `host_port` | the published port. On `primary`, `null` makes the project internal-only (no published port). An extra port can't be `null`; delete it instead. |
+  | `container_port` | the port inside the container; `null` = same as `host_port` |
+  | `service` | the compose service that publishes it; `null` = the single `app` service |
+  | `slug`, `label` | extra ports only (the primary port uses the project slug) |
   | `subdomain` | `true`/`false`: the default subdomain `<slug>.<base domain>` |
   | `path` | `true`/`false`: the default path `<base domain>/<slug>/`. Turning it on is refused when another project uses that path (409 `conflict`), when the port has no HTTP port, or in single-domain mode without a base path (422). |
   | `nginx` | proxy tuning: `max_body_mb` (largest upload in MB), `proxy_timeout_s` (1–86400), `websockets` (`true` forwards WebSocket and SSE upgrades), `extra` (raw lines added to the proxy `location` block). Fields you leave out stay as they are; `null` goes back to nginx's default. |
 
-  Everything is checked before anything changes. The answer has the updated
+  The port numbers, service, slug and label are saved first, then the default
+  URLs and tuning. Proxy tuning is checked before anything changes. The answer has the updated
   `port` (as in `GET .../ports`) and `nginx`, a short text that says how the
   nginx update went. As in the panel, the new values are saved even when
   nginx refuses them (for example a typo in `extra`): the note then starts with
@@ -501,6 +555,40 @@ change nginx, so they need an **admin** key.
 ```bash
 curl -X PATCH -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
   -d '{"subdomain":false,"nginx":{"websockets":true}}' "$API/projects/shop/ports/primary"
+curl -X PATCH -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
+  -d '{"host_port":8090,"container_port":3000}' "$API/projects/shop/ports/primary"
+```
+
+- `DELETE /api/v1/projects/{slug}/ports/{port}` — remove an extra port. Its
+  domains go back to the primary port. The primary port can't be deleted
+  (422); send `{"host_port": null}` to it instead.
+
+### Volumes
+
+These do what the **Volumes** card of the **Settings** tab does. A host path
+reaches the server's files, so they need an **admin** key.
+
+- `POST /api/v1/projects/{slug}/volumes` — mount a volume:
+
+  | Field | Required | Meaning |
+  |---|---|---|
+  | `kind` | no | `named` (a Docker volume, the default) or `bind` (a folder on the server) |
+  | `source` | yes | the volume name, or an absolute host path for `bind` |
+  | `target` | yes | absolute path inside the container |
+  | `read_only` | no | `true` mounts it read-only |
+  | `service` | no | compose service to mount it into; default = the single `app` service |
+
+  A second volume on the same `target` gives 409 `conflict`. ci-agent then
+  recreates the last successful deploy so the mount takes effect. The answer
+  (status 201) has the new `volume` and a `note`.
+
+- `DELETE /api/v1/projects/{slug}/volumes/{id}` — remove a mount. A named
+  volume keeps its data; a host folder is not touched. The last successful
+  deploy is recreated.
+
+```bash
+curl -X POST -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
+  -d '{"source":"shop-data","target":"/var/lib/shop"}' "$API/projects/shop/volumes"
 ```
 
 ## Old endpoints
