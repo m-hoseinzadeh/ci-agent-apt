@@ -38,6 +38,7 @@ Body is optional JSON:
 | `git_url` | override the project's configured repo for this run |
 | `branch` | override the configured branch |
 | `commit` | build an exact commit (fetched on top of the shallow clone); if it can't be fetched or checked out, the run **fails** rather than deploying branch `HEAD` |
+| `callback_url` | send this run's status reports to this `https://` URL instead of the project's — see [Per-run callback URL](#per-run-callback-url) |
 
 Plain **GitHub / GitLab / Gitea push payloads are accepted as-is**: the
 commit is read from `after`/`checkout_sha`; anything missing falls back to the
@@ -101,7 +102,7 @@ curl -X POST https://ci.example.internal/hooks/my-app/<token>/git \
 curl 'https://ci.example.internal/hooks/my-app/<token>/git?branch=release'
 ```
 
-For a GET, pass `git_url`, `branch`, and/or `commit` as query parameters; each
+For a GET, pass `git_url`, `branch`, `commit` and/or `callback_url` as query parameters; each
 falls back to the project's configuration when omitted. A POST body always wins
 over a query parameter for the same field.
 
@@ -119,6 +120,8 @@ curl 'https://ci.example.internal/hooks/my-app/<token>/zip?zip_url=http://artifa
 
 The ZIP endpoint needs a `zip_url` (from the POST body or the `?zip_url=`
 query parameter) or the ZIP file itself. Without either one it returns `422`.
+It also takes an optional `callback_url`, in the body or as `?callback_url=`
+(see [Per-run callback URL](#per-run-callback-url)).
 
 ### Upload the ZIP
 
@@ -135,6 +138,9 @@ curl -X POST https://ci.example.internal/hooks/my-app/<token>/zip \
 git archive --format=zip HEAD | curl -X POST https://ci.example.internal/hooks/my-app/<token>/zip \
   -H 'content-type: application/zip' --data-binary @-
 ```
+
+To get status reports for an uploaded ZIP, put the callback URL in the query
+string, because the body is the ZIP: `…/zip?callback_url=https%3A%2F%2Fcd.example.internal%2Frun-status%2F42`.
 
 The upload may be at most `zip_max_bytes` (default 500 MB); a bigger one is
 refused with `413`. If nginx sits in front of the agent, its
@@ -172,7 +178,7 @@ Limits and safety checks:
 | `202` | accepted; body `{"run_id": N}` — or `{"skipped": "<reason>"}` when the event/branch filter (or a deploy pause) dropped it |
 | `404` | unknown project, bad token, **or** archived project (all look the same on purpose) |
 | `413` | request body too large (the webhook body cap is 1 MiB; an uploaded ZIP may be up to `zip_max_bytes`) |
-| `422` | body present but unusable (bad JSON, missing `zip_url`, empty ZIP upload, no git URL anywhere) |
+| `422` | body present but unusable (bad JSON, missing `zip_url`, empty ZIP upload, no git URL anywhere, invalid `callback_url`); the body says why, and no run is started |
 | `500` | the agent could not queue the run; see the ci-agent log |
 
 `run_id` is the run's **global id** — unique across all projects. It is not the
@@ -207,6 +213,15 @@ These runs are **not** reported — nobody outside is waiting for them:
 - runs started by an env change, in the panel or through the API
   (`PUT`/`PATCH /api/v1/projects/{slug}/env`).
 
+There are two ways to say where the reports go:
+
+- a **per-run callback URL**, sent with the webhook call that starts the run
+  (see [Per-run callback URL](#per-run-callback-url)), or
+- the project's **Status callback URL**, set once on the Settings tab (below).
+
+When a run has its own callback URL, it reports **only** there. The project's
+URL is used for runs that came without one.
+
 ### Set it up
 
 1. Open the project and go to the **Settings** tab.
@@ -222,6 +237,42 @@ To turn it off, clear the URL and save. The token is stored encrypted and is
 shown in clear text on the Settings tab, like env values.
 
 ![screenshot: Settings tab with the Status callback URL and Callback token fields](TODO)
+
+### Per-run callback URL
+
+A system that starts many deploys (a CD tool) often needs each report to go to
+a URL that names *its* deploy, for example
+`https://cd.example.internal/run-status/<deploy id>`. The project's single
+callback URL can't do that. So send the URL with the webhook call instead:
+
+```bash
+curl -X POST https://ci.example.internal/hooks/my-app/<token>/zip \
+  -H 'content-type: application/json' \
+  -d '{"zip_url":"https://artifacts.internal/app-1.2.3.zip",
+       "callback_url":"https://cd.example.internal/run-status/42"}'
+```
+
+- Both webhooks take `callback_url`: the `/git` and `/zip` body, or a
+  `?callback_url=` query parameter. The body wins when both are sent.
+- It must be an absolute `https://` URL of at most 2000 characters. The same
+  hosts are blocked as for the project's URL (link-local, `0.0.0.0`, …).
+- An invalid `callback_url` (for example `http://…`, a relative path, an
+  empty string, or longer than 2000 characters) is answered with `422` and the
+  reason, and **no run is started**. It is never silently ignored.
+- The run reports to that URL **instead of** the project's Status callback
+  URL. The reports, retries and order are the same as below.
+- The `X-CiAgent-Token` header is the **webhook token** — the `<token>` part
+  of the `/hooks/<slug>/<token>/…` URL that started the run. Your receiver
+  already knows it, so it can check the report against the webhook it called.
+  Nothing new is shared. The project's Callback token is not used for these
+  runs.
+- The URL and token are saved with the run (the token encrypted, like env
+  values). A final report cut off by an agent restart is sent again after the
+  restart, to the same URL and with the same token.
+- The [API](./api.md) deploy calls take `callback_url` too. An API run has no
+  webhook token, so it sends the project's Callback token (if one is set).
+
+The run's page and the API show which URL a run reports to (see below).
 
 ### What the agent sends
 
@@ -287,7 +338,11 @@ see [Delivery and retries](#delivery-and-retries)).
   after it starts. So your receiver may see the **same final report twice** —
   treat repeats as "already recorded".
 - The run's page has a **Status callback** row (only for reported runs). It
-  shows:
+  shows how the final report went, then where it went: *to this run's
+  callback URL …* (a per-run `callback_url`) or *to the project's callback
+  URL …*. A user name and password in the URL are hidden. In the
+  [API](./api.md), the run's `callback.target` is `"run"` or `"project"` and
+  `callback.url` is the per-run URL. The first part is one of:
 
   | Value | Meaning |
   |---|---|
@@ -295,7 +350,7 @@ see [Delivery and retries](#delivery-and-retries)).
   | `pending` | the run ended; the final report is being sent |
   | `delivered (HTTP 200)` | your receiver accepted the final report |
   | `failed (…)` | the final report did not arrive; the brackets show the HTTP code or error, for example `failed (HTTP 404)` or `failed (cannot decrypt callback token)` |
-  | `skipped (no status callback URL set)` | the project had no callback URL when the run ended |
+  | `skipped (no status callback URL set)` | the run had no callback URL of its own, and the project had none when the run ended |
   | `not sent` | the run ended but no report was recorded |
 
 > **Note.** A webhook that answers `{"skipped": …}` (filtered push, or deploys
@@ -306,7 +361,8 @@ see [Delivery and retries](#delivery-and-retries)).
 
 | Problem | Fix |
 |---|---|
-| No reports arrive | Check that the run was started by a webhook or the API (panel deploys, auto-redeploys and env changes are not reported), and that the **Status callback URL** is set on that project |
+| No reports arrive | Check that the run was started by a webhook or the API (panel deploys, auto-redeploys and env changes are not reported), and that it was sent a `callback_url` or the **Status callback URL** is set on that project |
+| The webhook answers `422` with "callback_url must …" | The `callback_url` is not a valid absolute `https://` URL of at most 2000 characters. Fix it and call again; no run was started |
 | The run page says `failed (…)` | The detail shows the HTTP code or connection error. Make sure the agent's server can reach the URL. A `4xx` other than 408/429 is not retried — fix the receiver and redeploy |
 | Saving the URL says the host "is not allowed" | Link-local addresses (`169.254.*`, `fe80::`), `0.0.0.0`, `::` and `255.255.255.255` are blocked. Loopback (`127.0.0.1`) and LAN addresses are allowed |
 | The receiver gets the same final status twice | Expected after a retry or an agent restart. Ignore repeats |

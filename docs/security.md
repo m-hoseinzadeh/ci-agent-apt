@@ -205,6 +205,14 @@ server {
   `curl` through standard input, so it never appears in the process list. The
   `error` text it sends has project/shared env values and git credentials
   replaced with `*****`. See [Webhooks → Status callback](./webhooks.md).
+- A webhook or API caller can also send a **per-run `callback_url`**, so
+  whoever holds a project's webhook URL (or an operator API key) chooses where
+  that run's reports go. To limit this, it must be `https://`, at most 2000
+  characters, and pass the same host checks. The reports carry only the run's
+  status, `run_id` and masked error text. A webhook run sends the webhook's own
+  token as `X-CiAgent-Token`, which the caller already has, so no new secret
+  leaves the server. The URL and token are stored with the run (the token
+  encrypted).
 
 ## Managing nginx and TLS
 

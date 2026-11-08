@@ -5,7 +5,7 @@ Two paths: **online server** (sections 1–3) and **air-gapped server**
 (section 4). Commands assume Ubuntu 22.04/24.04 x86_64 and a sudo-capable
 user.
 
-Releases are built automatically from every commit on `main`:
+Releases are built automatically from every commit on `master`:
 **<https://github.com/m-hoseinzadeh/ci-agent/releases>** — the
 `…-x86_64-linux-musl` binary is fully static and runs on any x86_64 Linux.
 
@@ -101,7 +101,7 @@ docker --version && docker compose version && nginx -v && git --version && curl 
 
 ### Option A — apt (recommended for online servers)
 
-Every `main` commit is published as a signed package to the public apt
+Every `master` commit is published as a signed package to the public apt
 repository (binaries only — the source stays private):
 
 ```bash

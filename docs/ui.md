@@ -441,10 +441,12 @@ image tags and any error. It also shows:
   API return, and that status callbacks send. It is different from the
   per-project `#number` in the page title.
 - **Status callback** — only on runs started by a webhook or the API. It shows
-  how the final report to the project's callback URL went: `pending`,
-  `delivered (HTTP 200)`, `failed (…)` with the HTTP code or connection error,
-  `skipped (no status callback URL set)`, or `not sent`. While the run is
-  active it reads `sending progress updates`. See
+  how the final report went: `pending`, `delivered (HTTP 200)`, `failed (…)`
+  with the HTTP code or connection error, `skipped (no status callback URL
+  set)`, or `not sent`. While the run is active it reads `sending progress
+  updates`. After that it says where the reports go: *to this run's callback
+  URL …* (a `callback_url` sent with the webhook or API call) or *to the
+  project's callback URL …*. See
   [Webhooks → Status callback](./webhooks.md).
 
 ![screenshot: run detail page with the Run ID and Status callback rows](TODO)

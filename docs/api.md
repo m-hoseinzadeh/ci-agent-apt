@@ -149,8 +149,11 @@ Good to know:
     `commit_message`, `image_tags`
   - `queued_at`, `started_at`, `finished_at`, `error`
   - `callback`: `requested` (whether this run reports to the status
-    callback), `state` (`pending`, `delivered`, `failed`, `skipped`, or `null`
-    while the run is still going) and `detail` (for example `HTTP 200`)
+    callback), `target` (`"run"` when the run was started with its own
+    `callback_url`, else `"project"`), `url` (that per-run URL with any user
+    name and password hidden, or `null`), `state` (`pending`, `delivered`,
+    `failed`, `skipped`, or `null` while the run is still going) and `detail`
+    (for example `HTTP 200`)
   - `links`: `self` and `log`, the API paths of this run and its log
 - `GET /api/v1/projects/{slug}/runs/{number}/log` — the end of the run's build
   and deploy log (`?tail=500` lines, at most 5000). The answer has the `run`,
@@ -201,7 +204,7 @@ curl -H "Authorization: Bearer $KEY" "$API/projects/shop/logs?tail=100&since=30m
 | `name`, `slug` | yes | slug: lowercase letters, digits, dashes |
 | `mode` | no | `compose` (default), `dockerfile`, `image`, `inline` |
 | `git_url` | for git deploys | **admin only** |
-| `git_branch` | no | defaults to `main` |
+| `git_branch` | no | defaults to `master` |
 | `compose_path` | no | compose mode, default `docker-compose.yml` |
 | `dockerfile_path` | no | dockerfile mode, default `Dockerfile` |
 | `working_dir` | no | sub-folder of the repo to build in (monorepos); compose and dockerfile modes only |
@@ -214,6 +217,7 @@ curl -H "Authorization: Bearer $KEY" "$API/projects/shop/logs?tail=100&since=30m
 | `status_callback_url`, `status_callback_token` | no | where to send this project's [status callback](./webhooks.md) reports; set before the first deploy, so a `deploy: true` run is reported too; **admin only** |
 | `watch_paths` | no | `["services/wallet/**", "Dockerfile"]` (or one pattern per line): a git push deploys only when it changed a matching file. See [Webhooks](./webhooks.md) |
 | `deploy` | no | `true` = deploy right after creating |
+| `callback_url` | no | with `deploy: true`: send that run's status reports to this `https://` URL instead of the project's. See [Per-run callback URL](/docs/webhooks#per-run-callback-url) |
 
 With an **operator** key, create an image-mode project:
 
@@ -289,8 +293,9 @@ and the answer has no run id. To follow it, list the runs with
 
 - `POST /api/v1/projects/{slug}/deploy` — deploy now. With no body, a git
   project deploys its saved git URL and branch, and an image/inline project
-  deploys from its own config. Optional fields: `branch`, `force`, and (admin
-  keys only) `git_url` or `zip_url` to deploy from a different source.
+  deploys from its own config. Optional fields: `branch`, `force`,
+  `callback_url` (see below), and (admin keys only) `git_url` or `zip_url` to
+  deploy from a different source.
 - `POST /api/v1/projects/{slug}/runs/{number}/redeploy` — deploy the saved files
   of an earlier run again (a rollback).
 - `POST /api/v1/projects/{slug}/recreate` — recreate the containers from the
@@ -318,6 +323,21 @@ POST each status change to your URL, with `run_id` = the run's `id`:
 Runs started by an env change (`PUT`/`PATCH .../env`), from the admin panel,
 or by auto-redeploy are **not** reported. See
 [Webhooks → Status callback](/docs/webhooks#status-callback).
+
+To send one run's reports somewhere else, add `callback_url` to the deploy,
+redeploy, recreate or create (`deploy: true`) body:
+
+```bash
+curl -X POST -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
+  -d '{"callback_url":"https://cd.example.internal/run-status/42"}' \
+  "$API/projects/my-app/deploy"
+```
+
+That run then reports **only** to this URL, not the project's. It must be an
+absolute `https://` URL of at most 2000 characters; anything else is answered
+with 422 and no run is started. The `X-CiAgent-Token` header is the project's
+Callback token, if one is set (an API call has no webhook token). Operator keys
+may send it.
 
 ### Containers
 
