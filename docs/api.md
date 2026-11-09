@@ -645,8 +645,9 @@ as before:
   or repository (a compose file can ask for a privileged container or mount
   host folders) and run commands inside containers. Give admin keys only to
   agents you trust, with a short expiry.
-- **Operator keys** can't choose a project's repository or compose file, but
-  they can deploy **any image** in image mode, change environment variables,
+- **Operator keys** can't choose a project's repository or edit its compose
+  file, but they can point `compose_path` at any compose file inside that
+  repository, deploy **any image** in image mode, change environment variables,
   redeploy and stop containers, so a careless agent can break a running app.
   Use a **read** key when the agent only needs to look and debug.
 - **Operator keys can see Shared environment values.** The API never returns

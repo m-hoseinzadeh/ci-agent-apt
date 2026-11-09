@@ -20,8 +20,21 @@ guess codes for long:
 - After the password you have **10 minutes** to enter the code.
 - **5 wrong codes** and you must enter the password again.
 - After **30 wrong codes in 15 minutes** (from anyone), the 2FA step refuses
-  all codes until the 15 minutes pass. If you see this message and it wasn't
-  you, someone knows your password: change it.
+  all codes until the 15 minutes pass, including your correct code and backup
+  codes. If you see this message and it wasn't you, someone knows your
+  password.
+
+> **Locked out at the 2FA step?** Someone who knows your password can keep the
+> 2FA step locked by sending wrong codes, and you can't sign in to change the
+> password while it lasts. Fix it on the server over SSH:
+>
+> 1. Run `sudo ci-agent set-password` and choose a new password.
+> 2. Run `sudo systemctl restart ci-agent`.
+>
+> The restart clears the lock (it is kept in memory only) and ends every
+> session, including the attacker's half-signed-in ones. Their old password no
+> longer works, so they can't start the lock again. Then sign in as usual. See
+> [Configuration → CLI](./configuration.md).
 
 Sessions work like this:
 
