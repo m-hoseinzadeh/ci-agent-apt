@@ -148,7 +148,10 @@ into the Local box.
    - **Ports** (default `443,80`) — an advisory list for the Online operator.
      Keep **80** so per-host HTTPS certificate renewal can work through the
      tunnel. (The relay forwards each visitor to whichever port they arrived on
-     regardless.)
+     regardless.) Whatever the relay asks for, the Local box only connects
+     visitors to its own nginx on 443 and 80. Nothing else that listens on the
+     box, such as the panel's own port or a database bound to `127.0.0.1`, can
+     be reached through the tunnel.
 3. Click **Save settings**, then turn the switch **on**. The box dials out and
    connects. You can save the form in several visits; until everything is in,
    the message says *Settings saved — still needed before switching on: …*.
@@ -188,6 +191,23 @@ relay's IP address to enable PROXY protocol*.
 
 You can switch PROXY protocol for an existing route at any time with the
 **PROXY** checkbox in the **Routes** table on the Online box.
+
+The Online box's **own** sites and admin panel always get the real visitor IP,
+with no setting to change. The relay passes the visitor's address to the box's
+nginx, so login limits and API limits count each visitor separately. (Without
+this, every visitor would look like `127.0.0.1`, and one client could fill the
+limits for everyone.)
+
+> **Exception:** if your global nginx snippet (Host page) sets its own
+> `real_ip_header`, for example behind a CDN, ci-agent leaves the real-IP setup
+> to you and adds none of its own. To use the relay's visitor address, add
+> `set_real_ip_from 127.0.0.1;` and `real_ip_header proxy_protocol;` there
+> instead. The same applies to a Local box with PROXY protocol on.
+
+The relay also protects itself from slow or flooding visitors. A visitor must
+send the start of its request (the TLS hello or HTTP headers) within 10
+seconds, or the relay closes the connection. One address can have at most 32
+connections at that stage, and all visitors together at most 512.
 
 > **Gotcha.** Once PROXY protocol is on for the Local box, its nginx expects the
 > header on **every** connection — so the box is then reachable **only** through

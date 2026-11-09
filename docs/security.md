@@ -14,6 +14,15 @@ rate-limited **per client IP** (5 tries a minute, with a global backstop of 50
 tries a minute). Every action that changes something is CSRF-protected and
 written to the audit log.
 
+The 2FA step has its own limits, so even someone who knows the password can't
+guess codes for long:
+
+- After the password you have **10 minutes** to enter the code.
+- **5 wrong codes** and you must enter the password again.
+- After **30 wrong codes in 15 minutes** (from anyone), the 2FA step refuses
+  all codes until the 15 minutes pass. If you see this message and it wasn't
+  you, someone knows your password: change it.
+
 Sessions work like this:
 
 - A session lasts **7 days from your last visit**. Each page you open restarts
@@ -95,8 +104,11 @@ The **automation API** (`/api/*`) only accepts **API keys** created on the
   change domains, certificates and nginx settings, including raw nginx
   directives.
 - **Operator** keys deploy only what an admin set up, plus image-mode projects
-  (whose compose file ci-agent writes itself). Use **read** keys for agents
-  that only need to look.
+  (whose compose file ci-agent writes itself). So they can't point the compose
+  file or Dockerfile outside the repository, can't change the mode or image of
+  a project that has a host bind mount, and can't set env names that steer
+  ci-agent's own docker tools (`LD_*`, `PATH`, `DOCKER_*`, `COMPOSE_*`, …). Use
+  **read** keys for agents that only need to look.
 - Keys **skip the password and 2FA login**, so give each agent its own key with
   the lowest level it needs, and set an expiry. Revoking a key takes effect on
   the next request.
@@ -211,8 +223,25 @@ server {
   characters, and pass the same host checks. The reports carry only the run's
   status, `run_id` and masked error text. A webhook run sends the webhook's own
   token as `X-CiAgent-Token`, which the caller already has, so no new secret
-  leaves the server. The URL and token are stored with the run (the token
+  leaves the server. An operator API run sends no token; only an admin key's
+  run sends the project's Callback token. The URL and token are stored with the run (the token
   encrypted).
+
+- **Shared environment** values are encrypted at rest and never returned by
+  the API, but they are passed to every project's containers. An operator API
+  key may deploy an image-mode project with any image, and that image can
+  print the values to its log. So treat Shared environment as readable by
+  operator keys, and keep admin-only secrets out of it. See
+  [API → Security notes](./api.md).
+- **Single-domain mode** puts path-routed projects on the admin panel's own
+  domain, so their pages run with the panel's origin. A page from such a
+  project can act as you, the signed-in admin, while you have it open: it can
+  read panel pages and submit panel forms. ci-agent removes your session cookie
+  before passing requests on to the project, and refuses operator API keys
+  that try to change such a project's image or mode. It cannot stop a page
+  that runs on the panel's origin from using the panel. Only path-route apps
+  you trust as much as the panel. See
+  [Domains → Single-domain mode](./domains.md).
 
 ## Managing nginx and TLS
 

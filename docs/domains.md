@@ -182,6 +182,19 @@ subdomain) to the **same hostname your admin panel uses**. ci-agent then serves:
 **What this means:** one hostname, one certificate, no extra DNS records. Good
 for a small box where you do not want a separate domain per app.
 
+> **Warning — path-routed projects share the panel's origin.** Their pages run
+> as if they were part of the admin panel. If you open one while signed in to
+> the panel, its scripts can use the panel as you: read pages, change settings,
+> deploy code. Only tick **Path** in this mode for apps you trust as much as the
+> panel itself, such as your own code. For third-party apps, or apps where users
+> can post content, use a **Subdomain** instead, or a base domain that differs
+> from the panel's.
+>
+> ci-agent limits the damage it can: it removes the panel's session cookie
+> before passing requests on to the project, so an app that logs its requests
+> never holds your session. An operator API key also can't change the image or
+> mode of a project served this way.
+
 **You must set a base path first.** Because the panel lives at the root, projects
 need a prefix so their URLs cannot clash with the panel's own pages. Set a **Base
 path** (e.g. `/p`) under Settings → Default subdomain **before** turning on Path

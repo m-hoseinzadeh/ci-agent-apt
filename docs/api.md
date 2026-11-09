@@ -75,7 +75,19 @@ Each key has one level. A higher level can do everything a lower level can.
 decides what runs, and a compose file can ask for a privileged container or
 mount host folders, which gives full control of the server. Operator keys can
 only run what an admin already set up, plus image-mode projects, where
-ci-agent writes the compose file itself.
+ci-agent writes the compose file itself. `compose_path` and `dockerfile_path`
+must point at a file **inside the repository** for every key level (and in the
+UI): they may not start with `/` or use `..` to climb above the repository
+root. They are relative to the working directory, so `../docker-compose.yml`
+from working directory `app` is fine. For the same reason, an operator key:
+
+- can't change the `mode` or `image_ref` of a project that has a **host bind
+  mount** (an admin added it for the image that runs now);
+- can't change the `mode` or `image_ref` of a project with a **Path** port in
+  [single-domain mode](./domains.md), because those pages run on the admin
+  panel's own domain;
+- can't set environment variables that change how ci-agent's own docker tools
+  run (see [Environment variables](#environment-variables)).
 
 Good to know:
 
@@ -312,6 +324,24 @@ Names use letters, digits and `_` and don't start with a digit. Values can't
 contain line breaks and can't be exactly `*****` (the admin panel uses that as
 a placeholder).
 
+ci-agent runs `docker compose` with these variables in its own environment (so
+your compose file can use `${KEY}`). Some names would change how those tools
+run, so only **admin** keys may add or change them:
+
+- `PATH`, `HOME`, `TMPDIR`, `SHELL`, `BASH_ENV`, `IFS`, `GCONV_PATH`,
+  `LOCPATH`, `NLSPATH`, `GLIBC_TUNABLES`, `HOSTALIASES`, `LOCALDOMAIN`,
+  `RES_OPTIONS`, `RESOLV_HOST_CONF`;
+- `SSH_AUTH_SOCK`, `SSH_ASKPASS`, `SSH_ASKPASS_REQUIRE`, `GIT_SSH`,
+  `GIT_SSH_COMMAND`, `GIT_ASKPASS`, `GIT_EXEC_PATH`, `GIT_PROXY_COMMAND`,
+  `GIT_TEMPLATE_DIR`, `GIT_DIR`, `GIT_WORK_TREE`;
+- any name starting with `LD_`, `DOCKER_`, `COMPOSE_` (except
+  `COMPOSE_PROFILES`), `BUILDKIT_`, `BUILDX_`, `XDG_` or `GIT_CONFIG`.
+
+Names are exact and case-sensitive, so app settings such as `GIT_SHA`, `ENV`
+or `SSH_PORT` are fine. An operator key gets 403 `insufficient_level` for the
+names above. It may still send
+back a value an admin already set, unchanged, or remove it.
+
 If the values changed, ci-agent applies them to the running app (it recreates
 the containers, or rebuilds a Dockerfile project). The answer's `applied` field
 is a short text that says what happened (or `null`). Add `?apply=false` to only
@@ -367,9 +397,12 @@ curl -X POST -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json'
 
 That run then reports **only** to this URL, not the project's. It must be an
 absolute `https://` URL of at most 2000 characters; anything else is answered
-with 422 and no run is started. The `X-CiAgent-Token` header is the project's
-Callback token, if one is set (an API call has no webhook token). Operator keys
-may send it.
+with 422 and no run is started. Any key level may send it. The
+`X-CiAgent-Token` header depends on the key:
+
+- **admin** key: the project's Callback token, if one is set;
+- **operator** key: no token. An operator chooses this URL, and the Callback
+  token is an admin-only secret, so it is never sent there.
 
 ### Containers
 
@@ -612,10 +645,16 @@ as before:
   or repository (a compose file can ask for a privileged container or mount
   host folders) and run commands inside containers. Give admin keys only to
   agents you trust, with a short expiry.
-- **Operator keys** can't choose what code runs, but they can still change
-  environment variables, redeploy and stop containers, so a careless agent can
-  break a running app. Use a **read** key when the agent only needs to look
-  and debug.
+- **Operator keys** can't choose a project's repository or compose file, but
+  they can deploy **any image** in image mode, change environment variables,
+  redeploy and stop containers, so a careless agent can break a running app.
+  Use a **read** key when the agent only needs to look and debug.
+- **Operator keys can see Shared environment values.** The API never returns
+  them, but every project's containers receive them, including an image-mode
+  project whose image the key picked. That image can print them to its log.
+  So don't put a secret in Shared environment that operator keys must not
+  see. Per-project variables are no safer: operator keys can read those
+  directly.
 - Container logs are not filtered, so a read key can see anything your app
   prints there.
 - `status_callback_url` decides where the agent sends HTTP requests, so only

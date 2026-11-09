@@ -120,7 +120,9 @@ The **New project** form is the card **below** the project list.
    *Inline compose* (see [deploy modes](./projects.md)).
 4. Fill in the fields for that mode: **Git URL** and **Branch**, **Working
    directory** (for monorepos), **Compose path**, **Dockerfile path**, **Image**
-   or **Compose file**.
+   or **Compose file**. The compose and Dockerfile paths are relative to the
+   working directory and must stay inside the repository (no leading `/`, and
+   no `..` above the repository root).
 5. Optional: set the **HTTP port**. Leave it blank and a free port is picked for
    you. In Dockerfile and Prebuilt image mode, **Container port** is the port the
    app listens on inside the container (blank = same as the HTTP port).
@@ -884,7 +886,9 @@ The Settings page collects everything you change from the UI:
 - **Shared environment** — `KEY=VALUE` lines (one per line) merged into **every**
   project's build and deploy; a per-project variable of the same name wins.
   Stored encrypted; applied on each project's next deploy. Click **Save**. See
-  [Projects](./projects.md).
+  [Projects](./projects.md). Every container gets these values, so an
+  operator API key can read them by deploying an image of its choice: keep
+  admin-only secrets out of here.
 - **Default subdomain** — set a global **base domain** here; each project port
   can then be reached at `<slug>.<base>` (a subdomain, on by default) and/or
   `<base>/<slug>/` (an apex path, off by default), toggled per port in the

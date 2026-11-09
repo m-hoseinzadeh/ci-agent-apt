@@ -307,10 +307,17 @@ sudo dpkg -i ci-agent_*.deb
 sudo systemctl start ci-agent
 ```
 
-`install.sh` stops with `signature verification FAILED` if the `.deb` does not
-match its signature, and installs nothing. It checks against the key that came
-inside the bundle, so also look at its output: the line `using RSA key …` must
-show `A80F7309CF26133DBE88E2EC9C5489AAE86BF159`.
+`install.sh` stops with `signature verification FAILED` and installs nothing
+if the `.deb` does not match its signature, or if the signature is not from
+the ci-agent release key `A80F7309CF26133DBE88E2EC9C5489AAE86BF159`. That key is
+written into the script itself, so a bundle that brings some other key is
+refused. On success it prints
+`Signature OK (ci-agent release key A80F7309CF26133DBE88E2EC9C5489AAE86BF159)`.
+
+The check runs from the script inside the bundle, so it can't protect you from
+a bundle whose `install.sh` was also changed. If you got the bundle from
+anywhere other than the official releases page, compare its SHA-256 with the
+one listed there before you run it.
 
 The default `pull_policy = "never"` means deployments never try to reach a
 registry — they use exactly the images you loaded.

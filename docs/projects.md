@@ -330,6 +330,15 @@ The agent guards against this:
 Two **single-service** projects with the same service name (two `app`s, for
 example) are fine — neither looks up the bare name.
 
+The full hostnames must be unique too. Because slugs and service names can
+contain `-`, two projects can end up with the same one: project `db` with a
+service `main`, and a single-service project `db-main`, are both
+`ci-agent--db-main`. Other projects connecting to that name could reach either
+container. A deploy that **newly** brings in such a clash fails with
+*shared-network hostname collision: hostname "ci-agent--db-main" is already
+claimed on … by project …*. As with service names, a clash that already
+existed only logs a warning.
+
 **Fix:** rename the service in one of the compose files, or move one project to
 a different category.
 
@@ -380,6 +389,9 @@ already running (for example another project in the same category).
   host, `TZ`, an SMTP relay, a CA-bundle path). A per-project variable with the
   same key **overrides** the shared one. Shared vars are encrypted at rest and
   apply on each project's next deploy. See the [Admin UI guide](./ui.md).
+  **Shared values reach every container**, including ones running an image an
+  operator API key chose, so anyone with an operator key can read them. Don't
+  put secrets there that only admins should know.
 - `CI_RUN_ID` and `CI_COMMIT_SHA` are provided during build and deploy.
 
 ## Data
@@ -466,9 +478,12 @@ An **operator** API key can set them too:
   - **Other git hosts** — the **Host** (with `:port` if it isn't the default,
     e.g. `gitea.example.com:3000`), an account **Username**, and its password
     or token as the **Secret**. The credential is used for any repo on that
-    exact host.
+    exact host, and is only ever sent to it: ci-agent hands it to git only when
+    git asks for that host by name.
   - Saving the same host + owner again replaces the old credential.
 - Credentials are encrypted at rest, never appear in command lines or run logs,
   and are masked like any project secret.
+- A git URL with a backslash, a space or a control character is refused, since
+  different tools read its host differently.
 - Clones never prompt (`GIT_TERMINAL_PROMPT=0`): a private repo without
   working credentials fails fast with a clear error instead of hanging.

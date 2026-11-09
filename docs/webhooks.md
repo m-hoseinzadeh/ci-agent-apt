@@ -270,7 +270,9 @@ curl -X POST https://ci.example.internal/hooks/my-app/<token>/zip \
   values). A final report cut off by an agent restart is sent again after the
   restart, to the same URL and with the same token.
 - The [API](./api.md) deploy calls take `callback_url` too. An API run has no
-  webhook token, so it sends the project's Callback token (if one is set).
+  webhook token: with an **admin** key it sends the project's Callback token (if
+  one is set); with an **operator** key it sends no token, because the
+  operator chose the URL.
 
 The run's page and the API show which URL a run reports to (see below).
 
