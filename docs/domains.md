@@ -436,16 +436,42 @@ created on first use and stored under the data dir. Two challenge types:
 
 A DNS provider lets ci-agent add the `_acme-challenge` TXT records for a
 Let's Encrypt wildcard itself, so the wildcard renews automatically 30 days
-before it expires. Two are supported: **Cloudflare** and **ArvanCloud**. The
-server must reach the provider's API and Let's Encrypt over HTTPS.
+before it expires. Three are supported: **Cloudflare**, **ArvanCloud** and
+**AWS Route 53**. The server must reach the provider's API and Let's Encrypt
+over HTTPS.
 
 1. Get an API token:
    - **Cloudflare** — **My Profile → API Tokens → Create Token**. Give it
      **Zone → Zone → Read** and **Zone → DNS → Edit**, for your zone or all zones.
    - **ArvanCloud** — **Profile → API keys** (a machine user's key). You can
      paste it with or without the leading `Apikey`.
+   - **AWS Route 53** — in **IAM**, create a user for ci-agent and give it a
+     policy that allows these actions:
+
+     ```json
+     {
+       "Version": "2012-10-17",
+       "Statement": [
+         {
+           "Effect": "Allow",
+           "Action": ["route53:ListHostedZones", "route53:ListHostedZonesByName"],
+           "Resource": "*"
+         },
+         {
+           "Effect": "Allow",
+           "Action": ["route53:ListResourceRecordSets", "route53:ChangeResourceRecordSets"],
+           "Resource": "arn:aws:route53:::hostedzone/YOUR_ZONE_ID"
+         }
+       ]
+     }
+     ```
+
+     Put `*` in the second **Resource** to allow every zone. Then create an
+     **access key** for the user (**Security credentials → Create access key**).
+     Only public hosted zones are used; private ones are skipped.
 2. On the **Certificates** page, in **DNS providers**, pick the **Provider**,
-   give it a **Name** (optional), paste the **API token**, and click
+   give it a **Name** (optional), paste the **API token** (for AWS Route 53:
+   the **Access key ID** and the **Secret access key**), and click
    **Save & test**. ci-agent checks the token and lists the zones it can see.
    Saving an existing name replaces its token.
 3. Start a wildcard order and pick the provider in **TXT records**.

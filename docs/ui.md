@@ -396,9 +396,9 @@ link in **Settings → Default subdomain** or on a domain's SSL page.
   **Source** and when it **Expires**. **Renew** or **×** (delete).
 - **Let's Encrypt** — your **Account email**, a staging switch, **Save Let's
   Encrypt settings**, and **Start wildcard order** for a whole zone.
-- **DNS providers** — Cloudflare or ArvanCloud API tokens. With one, a wildcard
-  order adds its DNS records itself and renews automatically. **Save & test**,
-  **Test**, or **×** (delete).
+- **DNS providers** — Cloudflare, ArvanCloud or AWS Route 53 API keys. With
+  one, a wildcard order adds its DNS records itself and renews automatically.
+  **Save & test**, **Test**, or **×** (delete).
 - **Add an offline certificate** — make or upload one without internet access,
   then **Create certificate**.
 
