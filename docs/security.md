@@ -236,7 +236,8 @@ server {
   characters, and pass the same host checks. The reports carry only the run's
   status, `run_id` and masked error text. A webhook run sends the webhook's own
   token as `X-CiAgent-Token`, which the caller already has, so no new secret
-  leaves the server. An operator API run sends no token; only an admin key's
+  leaves the server. An operator API run sends no token, unless its URL is
+  exactly the project's own Status callback URL; otherwise only an admin key's
   run sends the project's Callback token. The URL and token are stored with the run (the token
   encrypted).
 

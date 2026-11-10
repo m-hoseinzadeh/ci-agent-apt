@@ -272,7 +272,8 @@ curl -X POST https://ci.example.internal/hooks/my-app/<token>/zip \
 - The [API](./api.md) deploy calls take `callback_url` too. An API run has no
   webhook token: with an **admin** key it sends the project's Callback token (if
   one is set); with an **operator** key it sends no token, because the
-  operator chose the URL.
+  operator chose the URL (unless that URL is exactly the project's own Status
+  callback URL, which gets the Callback token as usual).
 
 The run's page and the API show which URL a run reports to (see below).
 

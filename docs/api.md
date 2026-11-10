@@ -85,7 +85,11 @@ from working directory `app` is fine. For the same reason, an operator key:
   mount** (an admin added it for the image that runs now);
 - can't change the `mode` or `image_ref` of a project with a **Path** port in
   [single-domain mode](./domains.md), because those pages run on the admin
-  panel's own domain;
+  panel's own domain.
+
+  In both cases a new **tag or digest of the same image** is fine
+  (`nginx:1.27` → `nginx:1.28`); only a different image repository needs an
+  admin key;
 - can't set environment variables that change how ci-agent's own docker tools
   run (see [Environment variables](#environment-variables)).
 
@@ -402,7 +406,9 @@ with 422 and no run is started. Any key level may send it. The
 
 - **admin** key: the project's Callback token, if one is set;
 - **operator** key: no token. An operator chooses this URL, and the Callback
-  token is an admin-only secret, so it is never sent there.
+  token is an admin-only secret, so it is never sent there. The one exception
+  is a `callback_url` that is exactly the project's own Status callback URL:
+  the token was set for that address, so it goes with it.
 
 ### Containers
 
